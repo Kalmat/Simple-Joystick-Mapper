@@ -57,22 +57,22 @@ ARGS:
 
 <table style="border-collapse: collapse; width: 100%;">
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">-l</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">-l</td>
     <td style="border: 1px solid transparent; padding: 8px;">Select controller layout. Choose one of these values: ['INSPECT', 'Menu', 'Retro', 'Retro Plus', 'Arcade', 'Arcade Plus', 'Gamepad', 'Gamepad Plus', 'Full']<br>
                                                              'INSPECT' mode will show and save (to 'joystickmapper_inspect.json' file) all controllers events.<br>
                                                              Add custom layouts of your choice just creating/adding them to 'custom_layouts.json' file.</td>
   </tr>
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">-j</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">-j</td>
     <td style="border: 1px solid transparent; padding: 8px;">Select controller instance. If not selected, the tool will address the first in which any button is pressed.</td>
   </tr>
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">-a</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">-a</td>
     <td style="border: 1px solid transparent; padding: 8px;">Select window rotation on screen. Choose one of these values: [90, 180, 270].<br>  
                                                              If the window is rotated (angle not equal 0), it will show in fullscreen mode.</td>
   </tr>
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">-o</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">-o</td>
     <td style="border: 1px solid transparent; padding: 8px;">Set custom configuration output file.</td>
   </tr>
 </table>
@@ -81,12 +81,12 @@ OPTIONS:
 
 <table style="border-collapse: collapse; width: 100%;">
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">--s</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">--s</td>
     <td style="border: 1px solid transparent; padding: 8px;">Headless mode: suitable for non-mouse environments (e.g. an arcade system or menu).<br>
                                                              Headless mode will automatically save and exit when last button is successfully configured or omitted.</td>
   </tr>
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">--w</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">--w</td>
     <td style="border: 1px solid transparent; padding: 8px;">Rotated and Headless modes show in fullscreen by default. Use this option to show windowed (and frameless).</td>
   </tr>
 </table>
