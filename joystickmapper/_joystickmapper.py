@@ -35,9 +35,9 @@ class JoystickMapper(QMainWindow):
 
         self.layouts = layouts
         if os.path.exists("custom_layouts.json"):
-            with open("custom_layouts.json", "r", encoding="utf8") as f:
-                custom_layouts = json.loads(f.read())
             try:
+                with open("custom_layouts.json", "r", encoding="utf8") as f:
+                    custom_layouts = json.loads(f.read())
                 layouts.update(custom_layouts)
             except:
                 print(langtexts.getErrorText("layout_mismatch"))
@@ -47,7 +47,7 @@ class JoystickMapper(QMainWindow):
             self.padLayout = self.layouts[self.selectedPadLayout]
         else:
             if not self.inspectMode:
-                raise langtexts.getErrorText("")
+                raise langtexts.getErrorText("layout")
             self.selectedPadLayout = Mode.FULL
             self.padLayout = self.layouts[self.selectedPadLayout]
         # address a given joystick (by instance number) or leave it empty so the script will point to the first pressed

@@ -99,6 +99,7 @@ class JoystickListener(QThread):
 
                     if event.type == pygame.JOYBUTTONDOWN:
                         self.counter = 0
+                        self.counter = 0
 
                     elif event.type in (pygame.JOYBUTTONUP, pygame.JOYAXISMOTION, pygame.JOYHATMOTION):
                         print(event)
