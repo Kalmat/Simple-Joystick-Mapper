@@ -95,7 +95,7 @@ class JoystickMapper(QMainWindow):
         self.listener_thread.start()
 
     def show(self, force_full=False):
-        if force_full or (self.rotateWidget and not self.windowed):
+        if force_full or ((self.headlessMode or self.rotateWidget) and not self.windowed):
             super().showFullScreen()
         else:
             super().show()
@@ -319,9 +319,11 @@ class JoystickMapper(QMainWindow):
             button_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             button_widget.setLayout(button_layout)
             button_label = QLabel(button, self.widget2 if self.rotateWidget else self)
+            button_label.setObjectName(objectName)
             button_label.setFont(self.buttonsFont)
             button_layout.addWidget(button_label, 0, 0, 1, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             button_value = QLabel(self.notAssignedText, self.widget2 if self.rotateWidget else self)
+            button_value.setObjectName(objectName)
             button_value.setFont(self.buttonsFont)
             button_layout.addWidget(button_value, 0, 1, 1, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             button_layout.setColumnStretch(0, 1)
@@ -514,12 +516,12 @@ class JoystickMapper(QMainWindow):
 
     def saveConfig(self, force=False):
 
-        if force or (not self.inspectMode and self.headlessMode and self.configEnded):
+        if force or (self.headlessMode and not self.inspectMode):
 
             if not self.outputFile:
                 joyName = self.joysticksInfo[self.joystick_id]["name"]
-                # fileBaseName = self.selectedPadLayout.upper() + "_" + "".join(x if x.isalnum() else "_" for x in joyName)
-                fileBaseName = utils.get_valid_filename(self.selectedPadLayout.upper() + "_" + joyName)
+                padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
+                fileBaseName = utils.get_valid_filename(padLayout + "_" + joyName)
                 fileName = f"{fileBaseName[0:64]}.json"
                 i = 0
                 while os.path.exists(fileName):
@@ -692,16 +694,7 @@ class JoystickMapper(QMainWindow):
             if self.currentIndex <= len(self.padLayout):
                 if self.currentIndex == len(self.padLayout):
                     if self.headlessMode:
-                        w = self.content_layout.itemAt(prevIndex).widget()
-                        w.layout().itemAt(1).widget().setText(valueDesc)
-                        # force updating label content (blocked by dialog otherwise)
-                        w.update()
-                        w.hide()
-                        w.show()
-                        self.configEnded = True
-                        QTimer.singleShot(3000, lambda: self.forceClose(
-                            dialog_to_close=self.controllerConfiguredHeadlessDialog))
-                        self.controllerConfiguredHeadlessDialog.exec()
+                        self.endConfig(prevIndex, valueDesc)
                     else:
                         self.currentIndex = prevIndex
                 self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
@@ -732,6 +725,7 @@ class JoystickMapper(QMainWindow):
         # This is needed when widget is rotated (installed in graphicsview)
         if event is not None and event.type() == QEvent.Type.KeyRelease:
             self.keyReleaseEvent(event)
+            return True
         return super().eventFilter(source, event)
 
     def keyReleaseEvent(self, a0):
@@ -769,17 +763,31 @@ class JoystickMapper(QMainWindow):
             if prevIndex != self.currentIndex:
                 if prevText in (self.notAssignedText, self.alreadyAssignedText):
                     valueDesc = self.omittedText
-                    if self.currentButton in self.addedEvents[self.joystick_id].keys():
+                    if self.joystick_id is not None and self.joystick_id in self.addedEvents.keys() and self.currentButton in self.addedEvents[self.joystick_id].keys():
                         try:
                             del self.addedEvents[self.joystick_id][self.currentButton]
                         except:
                             pass
                 else:
                     valueDesc = prevText
-                self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
+                if self.headlessMode and prevIndex == len(self.padLayout) - 1 and valueDesc == self.omittedText:
+                    self.endConfig(prevIndex, valueDesc)
+                else:
+                    self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
 
         if self.content_widget.isVisible():
             self.content_widget.setFocus(Qt.FocusReason.NoFocusReason)
+
+    def endConfig(self, index, text):
+        w = self.content_layout.itemAt(index).widget()
+        w.layout().itemAt(1).widget().setText(text)
+        # force updating label content (blocked by dialog otherwise)
+        w.update()
+        w.hide()
+        w.show()
+        self.configEnded = True
+        QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.controllerConfiguredHeadlessDialog))
+        self.controllerConfiguredHeadlessDialog.exec()
 
     def forceClose(self, checked=False, dialog_to_close=None):
         self.forceCloseRequested = True
@@ -790,7 +798,7 @@ class JoystickMapper(QMainWindow):
 
     def closeEvent(self, a0=None):
 
-        if self.forceCloseRequested:
+        if self.forceCloseRequested or self.headlessMode:
             self.listener_thread.quit()
             self.saveConfig()
             if self.mapperClosedSig is not None:

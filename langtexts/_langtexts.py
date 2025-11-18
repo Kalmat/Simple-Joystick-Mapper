@@ -13,7 +13,7 @@ def getInitMessage(lang="es"):
            "Although it is not strictly necessary, it is always recommendable to use a keyboard during configuration:\n" \
            "\t↑ ↓ : Move up / down (and omit if button not assigned)\n" \
            "\tDel : Delete current button value and set as not assigned\n" \
-           "\tEsc : Exit program (if in headless mode, all non-saved data will be lost)\n" \
+           "\tEsc : Exit program (if in headless mode, config will be auto-saved, complete or not)\n" \
            "After a successful configuration, find the output in '[LAYOUT]_[JOYSTICK NAME].json' file:\n" \
            '\t"type": event type as per pygame values:\n' \
            "\t\t1539: Button (down)\n" \
@@ -34,7 +34,7 @@ def getInitMessage(lang="es"):
            "\t\t-o\tSet custom configuration output file.\n" \
            "\tOPTIONS:\n" \
            "\t\t--s\tHeadless mode: suitable for non-mouse environments (e.g. an arcade system or menu).\n" \
-           "\t\t\tHeadless mode will automatically save and exit when last button is successfully configured.\n" \
+           "\t\t\tHeadless mode will automatically save and exit when last button is successfully configured or omitted.\n" \
            "\t\t--w\tHeadless mode shows in fullscreen by default. Use this option to show windowed (and frameless).\n\n"
 
 

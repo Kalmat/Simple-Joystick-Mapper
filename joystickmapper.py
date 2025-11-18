@@ -1,8 +1,11 @@
+import signal
 import sys
 import traceback
 
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication
 
+import utils
 from joystickmapper import JoystickMapper, Mode, Angle
 from langtexts import getInitMessage
 
@@ -47,12 +50,14 @@ def exception_hook(exctype, value, tb):
 
 if __name__ == "__main__":
 
-    # This will allow to manage Ctl-C interruption (e.g. when running from IDE)
-    # signal.signal(signal.SIGINT, sigint_handler)
-    # timer = QtCore.QTimer()
-    # timer.start(500)
-    # timer.timeout.connect(lambda: None)
-    # This will allow to show some tracebacks (not all, anyway)
+    if not utils.is_packaged():
+        # This will allow to manage Ctl-C interruption (e.g. when running from IDE)
+        signal.signal(signal.SIGINT, sigint_handler)
+        timer = QTimer()
+        timer.start(500)
+        timer.timeout.connect(lambda: None)
+
+    # This will allow to catch and show some tracebacks (not all, anyway)
     sys._excepthook = sys.excepthook
     sys.excepthook = exception_hook
 

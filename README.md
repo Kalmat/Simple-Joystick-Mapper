@@ -19,11 +19,11 @@ If running JoystickMapper class within another script as a PyQt QMainWindow, the
 ### Using an auxiliary keyboard
 Although it is not strictly necessary, it is always recommendable to use a keyboard during configuration, allowing to: 
 
-| Key | Description                                                         |
-|-----|---------------------------------------------------------------------|
-| ↑ ↓ | Move up / down (and omit if button not assigned)                    | 
-| Del | Delete current button value and set as not assigned                 | 
-| Esc | Exit program (if in headless mode, all non-saved data will be lost) | 
+| Key | Description                                                                             |
+|-----|-----------------------------------------------------------------------------------------|
+| ↑ ↓ | Move up / down (and omit if button not assigned)                                        | 
+| Del | Delete current button value and set as not assigned                                     | 
+| Esc | Exit program (if in headless mode, config progress will be auto-saved, complete or not) | 
 
 ### Configuration output
 After a successful configuration, find the output in '[LAYOUT]_[JOYSTICK NAME].json' (e.g. 'FULL_Xbox_360_Controller.json') file: 
@@ -83,7 +83,7 @@ OPTIONS:
   <tr>
     <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">--s</td>
     <td style="border: 1px solid transparent; padding: 8px;">Headless mode: suitable for non-mouse environments (e.g. an arcade system or menu).<br>
-                                                             Headless mode will automatically save and exit when last button is successfully configured.</td>
+                                                             Headless mode will automatically save and exit when last button is successfully configured or omitted.</td>
   </tr>
   <tr>
     <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">--w</td>
