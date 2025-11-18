@@ -1,7 +1,7 @@
 # Simple Joystick Mapper
-This script will help to map the buttons, axes and triggers of (hopefully almost) any controller.
+This script will help to map the buttons, d-pads, axes and triggers of (hopefully almost) any controller. It is not very sophisticated, but it is extremely simple and easy to use. Aimed to be used within arcade systems and similar situations.
 
-It is built with PyGame and PyQt, so it can be used as a stand-alone tool or embedded in your own code (just like any other QMainWindow)
+It is built with PyGame and PyQt, so it can be used as a stand-alone tool or embedded in your own code (just like any other QMainWindow).
 
 Some useful features included in this tool:
 - Choose controller (if several connected)
