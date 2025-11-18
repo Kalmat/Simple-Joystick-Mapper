@@ -21,6 +21,8 @@ def getArgs():
     for i, arg in enumerate(sys.argv):
         if arg == "-l":
             pad_layout = str(sys.argv[i + 1])
+            if pad_layout == "Full":
+                pad_layout = "Completo"
         elif arg == "-j":
             joystick_id = str(sys.argv[i + 1])
         elif arg == "-a":

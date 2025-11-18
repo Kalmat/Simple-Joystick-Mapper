@@ -58,7 +58,7 @@ ARGS:
 <table style="border-collapse: collapse; width: 100%;">
   <tr>
     <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">-l</td>
-    <td style="border: 1px solid transparent; padding: 8px;">Select controller layout. Choose one of these values: ['INSPECT', 'Menu', 'Retro', 'Retro Plus', 'Arcade', 'Arcade Plus', 'Gamepad', 'Gamepad Plus', 'Completo']<br>
+    <td style="border: 1px solid transparent; padding: 8px;">Select controller layout. Choose one of these values: ['INSPECT', 'Menu', 'Retro', 'Retro Plus', 'Arcade', 'Arcade Plus', 'Gamepad', 'Gamepad Plus', 'Full']<br>
                                                              'INSPECT' mode will show and save (to 'joystickmapper_inspect.json' file) all controllers events.<br>
                                                              Add custom layouts of your choice just creating/adding them to 'custom_layouts.json' file.</td>
   </tr>
@@ -68,7 +68,7 @@ ARGS:
   </tr>
   <tr>
     <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">-a</td>
-    <td style="border: 1px solid transparent; padding: 8px;">Select window rotation on screen. Choose one of these values: [0, 90, 180, 270].<br>  
+    <td style="border: 1px solid transparent; padding: 8px;">Select window rotation on screen. Choose one of these values: [90, 180, 270].<br>  
                                                              If the window is rotated (angle not equal 0), it will show in fullscreen mode.</td>
   </tr>
   <tr>
@@ -87,6 +87,6 @@ OPTIONS:
   </tr>
   <tr>
     <td style="border: 1px solid transparent; padding: 8px; vertical-align: top;">--w</td>
-    <td style="border: 1px solid transparent; padding: 8px;">Headless mode shows in fullscreen by default. Use this option to show windowed (and frameless).</td>
+    <td style="border: 1px solid transparent; padding: 8px;">Rotated and Headless modes show in fullscreen by default. Use this option to show windowed (and frameless).</td>
   </tr>
 </table>
