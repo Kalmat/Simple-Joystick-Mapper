@@ -67,7 +67,7 @@ ARGS:
     <td style="border: 1px solid transparent; padding: 8px;">Select controller instance. If not selected, the tool will address the first in which any button is pressed.</td>
   </tr>
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">"-a"</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">-a</td>
     <td style="border: 1px solid transparent; padding: 8px;">Select window rotation on screen. Choose one of these values: [90, 180, 270].<br>  
                                                              If the window is rotated (angle not equal 0), it will show in fullscreen mode.</td>
   </tr>
@@ -86,7 +86,7 @@ OPTIONS:
                                                              Headless mode will automatically save and exit when last button is successfully configured or omitted.</td>
   </tr>
   <tr>
-    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">"--w"</td>
+    <td style="border: 1px solid transparent; padding: 8px; vertical-align: top; white-space: nowrap;">--w</td>
     <td style="border: 1px solid transparent; padding: 8px;">Rotated and Headless modes show in fullscreen by default. Use this option to show windowed (and frameless).</td>
   </tr>
 </table>
