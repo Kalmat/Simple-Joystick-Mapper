@@ -1,0 +1,43 @@
+QWidget {
+    background: #646464;
+    color: white;
+    border: none;
+}
+
+QPushButton {
+    background: #323232; color: white;
+    border-left: 1px solid lightgray; border-top: 1px solid lightgray;
+    border-bottom: 1px solid black; border-right: 1px solid black;
+    border-radius: 4px;
+    min-width: 120px; min-height: 30px;
+}
+QPushButton:hover {
+    background: lightgray; color: black;
+}
+
+QComboBox {
+    background-color: #323232;
+    color: white;
+    max-height: 24px;
+}
+QComboBox QAbstractItemView {
+    border: 2px solid darkgray;
+    selection-background-color: lightgray;
+    selection-color: black;
+}
+QComboBox::on {
+    background-color: #323232;
+    color: white;
+}
+QComboBox::item {
+    background-color: #323232;
+    color: #323232;
+}
+QComboBox::item:selected:!active, QComboBox::item:selected:active {
+    background-color: #323232;
+    color: #323232;
+}
+QComboBox::item::hover {
+    background-color: #323232;
+    color: #323232;
+}

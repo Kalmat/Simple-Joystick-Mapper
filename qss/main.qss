@@ -1,0 +1,17 @@
+QWidget {
+    background: #BBBBBB;
+    color: black;
+}
+
+QWidget#selected {
+    background: white;
+    color: black;
+    border-radius: 10px;
+ }
+
+QWidget#idle {
+    background: lightgray;
+    color: black;
+    border-radius: 10px;
+    border: none;
+}

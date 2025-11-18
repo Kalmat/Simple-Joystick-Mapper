@@ -1,0 +1,11 @@
+class Angle:
+    NOT_ROTATED = 0
+    ROTATE_90 = 90
+    ROTATE_RIGHT = 90
+    ROTATE_180 = 180
+    ROTATE_VERTICAL = 180
+    ROTATE_270 = 270
+    ROTATE_LEFT = 270
+
+
+angles = [0, 90, 180, 270]
