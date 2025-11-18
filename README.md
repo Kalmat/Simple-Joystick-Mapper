@@ -28,18 +28,18 @@ Although it is not strictly necessary, it is always recommendable to use a keybo
 ### Configuration output
 After a successful configuration, find the output in '[LAYOUT]_[JOYSTICK NAME].json' (e.g. 'FULL_Xbox_360_Controller.json') file: 
 
-| Key            | Values                          | Description                                                                       |
-|----------------|---------------------------------|-----------------------------------------------------------------------------------|
-| "type"         |                                 | event type as per pygame values:                                                  |
-|                | "1539"                          | Button (down)                                                                     | 
-|                | "1538"                          | Hat (aka D-Pad or Directional Pad)                                                | 
-|                | "1536"                          | Axe (aka Analog Joysticks. Triggers will also be recognized as axes)              | 
-| "description"  |                                 | human-readable description of event type:                                         |
-|                | "BUTTON"                        |                                                                                   |
-|                | "D-PAD"                         |                                                                                   |
-|                | "ANALOG JOYSTICK / TRIGGER"     |                                                                                   |
-| "hat" or "axe" | [#HAT] / [#AXE]                 | value to identify which hat or axis has been pressed (not present for buttons)    |
-| "value"        | [#BUTTON] / ([#AXIS], [#VALUE]) | value returned by button, hat or axis when pressed (hat and axis will be tuples)  |
+| Key            | Values                          | Description                                                                    |
+|----------------|---------------------------------|--------------------------------------------------------------------------------|
+| "type"         |                                 | event type as per pygame values:                                               |
+|                | "1539"                          | Button (down)                                                                  | 
+|                | "1538"                          | Hat (aka D-Pad or Directional Pad)                                             | 
+|                | "1536"                          | Axe (aka Analog Joysticks and Triggers)                                        | 
+| "description"  |                                 | human-readable description of event type:                                      |
+|                | "BUTTON"                        |                                                                                |
+|                | "D-PAD"                         |                                                                                |
+|                | "ANALOG JOYSTICK / TRIGGER"     |                                                                                |
+| "hat" or "axe" | [#HAT] / [#AXE]                 | value to identify which hat or axe has been pressed (not present for buttons)  |
+| "value"        | [#BUTTON] / ([#AXIS], [#VALUE]) | value returned by button, hat or axe when pressed (hat and axe will be tuples) |
 
 All values are integer or tuples of integers, representing:
 
