@@ -18,10 +18,10 @@ def getInitMessage(lang="es"):
            '\t"type": event type as per pygame values:\n' \
            "\t\t1539: Button (down)\n" \
            "\t\t1538: Hat (aka D-Pad or Directional Pad)\n" \
-           "\t\t1536: Axis (aka Analog Joysticks. Triggers, like L2 and R2, will also be recognized as axis)\n" \
+           "\t\t1536: Axis (aka Analog Joysticks and Triggers)\n" \
            '\t"description": human-readable description of event type\n' \
-           '\t"value": value returned by button, hat or axis when pressed (hat and axis will be tuples)\n' \
-           '\t"hat" or "axis": value which identifies which hat or axis has been pressed (not present for buttons)\n\n' \
+           '\t"value": value returned by button, hat or axe when pressed (hat and axe will be tuples)\n' \
+           '\t"hat" or "axe": value which identifies which hat or axe has been pressed (not present for buttons)\n\n' \
            "USAGE:\n\n" \
            "\t" + target_exe + " [ARGS] [OPTIONS]\n\n" \
            "\tARGS:\n" \
