@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import pkg_resources
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
@@ -12,8 +13,10 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QMainWindow, QApplicat
 
 import langtexts
 import utils
-from joysticklistener import JoystickListener
-from joystickmapper import angles, homeButton, layouts, Mode
+from listener import JoystickListener
+from joystickmapper._angles import angles
+from joystickmapper._layouts import homeButton, layouts
+from joystickmapper._modes import Mode
 from scrolllabel import ScrollLabel
 
 
@@ -124,8 +127,8 @@ class JoystickMapper(QMainWindow):
 
         self.setMinimumWidth(860)
 
-        self.header_style = open(utils.resource_path("qss/header.qss"), "r").read()
-        self.main_style = open(utils.resource_path("qss/main.qss"), "r").read()
+        self.header_style = open(utils.resource_path("qss/header.qss", module="joystickmapper"), "r").read()
+        self.main_style = open(utils.resource_path("qss/main.qss", module="joystickmapper"), "r").read()
         self.selected_style_tag = "selected"
         self.idle_style_tag = "idle"
 
@@ -335,7 +338,7 @@ class JoystickMapper(QMainWindow):
     def setupUIInspect(self):
 
         self.inspectWidget = ScrollLabel()
-        self.inspectWidget.setStyleSheet(open(utils.resource_path("qss/inspect.qss"), "r").read())
+        self.inspectWidget.setStyleSheet(open(utils.resource_path("qss/inspect.qss", module="joystickmapper"), "r").read())
 
         if self.inspectMode:
             self.mainLayout.addWidget(self.inspectWidget, 0 if self.headlessMode else 1, 0, 1, 4)

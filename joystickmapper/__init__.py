@@ -1,4 +1,6 @@
-from ._angles import Angle, angles
-from ._layouts import homeButton, layouts
+from ._angles import Angle
 from ._modes import Mode
-from ._joystickmapper import JoystickMapper
+from mapper import JoystickMapper
+
+
+__version__ = "0.1.0"

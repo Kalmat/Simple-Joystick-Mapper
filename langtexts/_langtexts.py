@@ -1,6 +1,7 @@
 import sys
 
-from joystickmapper import layouts, angles
+from joystickmapper._layouts import layouts
+from joystickmapper._angles import angles
 
 
 def getInitMessage(lang="es"):
@@ -177,10 +178,10 @@ def getDialogsText(text, lang="es"):
 
     elif text == "success_headless":
         if lang == "es":
-            return "Mando configurado corretamente!!!\n\n" \
+            return "Mando configurado correctamente!!!\n\n" \
                    "Esta ventana se cerrará en 3 segundos.\n\n"
         else:
-            return "The controller has been correcly configured!!!\n\n" \
+            return "The controller has been correctly configured!!!\n\n" \
                    "This dialog will automatically close in 3 seconds.\n\n"
 
     elif text == "cancel":

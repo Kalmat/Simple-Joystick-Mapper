@@ -1,6 +1,9 @@
+import logging
 import os
 import re
 import sys
+
+import pkg_resources
 
 
 def is_packaged():
@@ -17,7 +20,7 @@ def app_location():
     return location
 
 
-def resource_path(relative_path, inverted=False, use_dist_folder=""):
+def resource_path(relative_path, inverted=False, use_dist_folder="", module=""):
     # this will find resources packaged or not within the executable, with a relative path from application folder
     # when intended to use pyinstaller, move the external resources to the dist folder and set use_dist_folder accordingly (most likely "dist")
     path = ""
@@ -26,17 +29,23 @@ def resource_path(relative_path, inverted=False, use_dist_folder=""):
     if is_packaged():
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
         ret = os.path.normpath(os.path.join(base_path, relative_path))
-        if os.path.exists(ret):
-            found = True
+        found = os.path.exists(ret)
+
+    if not found and module:
+        # resource might be inside a wheel (will crash if not installed as module)
+        try:
+            ret = os.path.normpath(pkg_resources.resource_filename(module, relative_path))
+            found = os.path.exists(ret)
+        except:
+            pass
 
     if not found:
-        # resource is not package within executable
+        # resource is in separate folder, not packaged within executable or wheel
         base_path = app_location()
         if not is_packaged():
             base_path = os.path.normpath(os.path.join(base_path, use_dist_folder))
         ret = os.path.normpath(os.path.join(base_path, relative_path))
-        if os.path.exists(ret):
-            found = True
+        found = os.path.exists(ret)
 
     if found:
         if inverted:

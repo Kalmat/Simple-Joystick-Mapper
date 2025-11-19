@@ -11,7 +11,7 @@ Some useful features included in this tool:
 - Show window rotated
 - Show window in headless, non-interactive mode (suitable for non-mouse environments like an arcade system or menu)
 - Show window in fullscreen or windowed modes
-- Run class within your own code (*)
+- Embed the tool in your own app, and even run class within your own code (*)
 
 ##### (*) Warning
 If running JoystickMapper class within another script as a PyQt QMainWindow, the joystick listener included in this tool may interfere with other pygame event loops running. If this is the case, pause the existing loop or run the tool as a stand-alone application (running it with Python interpreter or using a tool like PyInstaller to pack an .exe file).
