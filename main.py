@@ -5,10 +5,10 @@ import traceback
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication
 
-import utils
+from joystickmapper._utils import is_packaged
 from joystickmapper import Mode, Angle
-from mapper import JoystickMapper
-from langtexts import getInitMessage
+from joystickmapper._mapper import JoystickMapper
+from joystickmapper._langtexts import getInitMessage
 
 
 def showInitMessage():
@@ -50,7 +50,7 @@ def exception_hook(exctype, value, tb):
 
 
 if __name__ == "__main__":
-    if not utils.is_packaged():
+    if not is_packaged():
         # This will allow to manage Ctl-C interruption (e.g. when running from IDE)
         signal.signal(signal.SIGINT, sigint_handler)
         timer = QTimer()

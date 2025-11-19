@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
@@ -10,13 +9,13 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QRectF, QEvent, QTim
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QMainWindow, QApplication, QStatusBar, QGraphicsView, \
     QGraphicsScene, QGraphicsProxyWidget, QScrollArea, QComboBox, QPushButton, QSizePolicy, QMessageBox, QStyle
 
-from joystickmapper._angles import angles
-from joystickmapper._layouts import homeButton, layouts
-from joystickmapper._modes import Mode
-from listener import JoystickListener
-from scrolllabel import ScrollLabel
-import langtexts
-import utils
+from ._angles import angles
+from ._layouts import homeButton, layouts
+from ._modes import Mode
+from ._listener import JoystickListener
+from ._scrolllabel import ScrollLabel
+from ._langtexts import *
+from ._utils import *
 
 
 class JoystickMapper(QMainWindow):
@@ -30,7 +29,7 @@ class JoystickMapper(QMainWindow):
         super().__init__(None)
 
         self.setWindowTitle("Simple Joystick Mapper")
-        self.setWindowIcon(QIcon(os.path.join(utils.resource_path("resources/joystick.ico"))))
+        self.setWindowIcon(QIcon(os.path.join(resource_path("resources/joystick.ico"))))
 
         self.inspectMode = pad_layout == Mode.INSPECT
         self.mapperClosedSig = mapper_closed_sig
@@ -42,14 +41,14 @@ class JoystickMapper(QMainWindow):
                     custom_layouts = json.loads(f.read())
                 layouts.update(custom_layouts)
             except:
-                print(langtexts.getErrorText("layout_mismatch"))
+                print(getErrorText("layout_mismatch"))
 
         if pad_layout in layouts.keys():
             self.selectedPadLayout = pad_layout
             self.padLayout = self.layouts[self.selectedPadLayout]
         else:
             if not self.inspectMode:
-                raise langtexts.getErrorText("layout")
+                raise getErrorText("layout")
             self.selectedPadLayout = Mode.FULL
             self.padLayout = self.layouts[self.selectedPadLayout]
         # address a given joystick (by instance number) or leave it empty so the script will point to the first pressed
@@ -58,7 +57,7 @@ class JoystickMapper(QMainWindow):
             self.angle = angle
             self.rotateWidget = self.angle != 0
         else:
-            raise langtexts.getErrorText("angle")
+            raise getErrorText("angle")
         self.headlessMode = headless_mode
         self.windowed = windowed
         if self.headlessMode:
@@ -126,8 +125,8 @@ class JoystickMapper(QMainWindow):
 
         self.setMinimumWidth(860)
 
-        self.header_style = open(utils.resource_path("qss/header.qss", module="joystickmapper"), "r").read()
-        self.main_style = open(utils.resource_path("qss/main.qss", module="joystickmapper"), "r").read()
+        self.header_style = open(resource_path("qss/header.qss", module="joystickmapper"), "r").read()
+        self.main_style = open(resource_path("qss/main.qss", module="joystickmapper"), "r").read()
         self.selected_style_tag = "selected"
         self.idle_style_tag = "idle"
 
@@ -181,7 +180,7 @@ class JoystickMapper(QMainWindow):
             self.headerLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
             self.headerWidget.setLayout(self.headerLayout)
 
-            joyName_lbl = QLabel(langtexts.getHeaderText("joy"))
+            joyName_lbl = QLabel(getHeaderText("joy"))
             joyName_lbl.setFont(font)
             self.headerLayout.addWidget(joyName_lbl, 0, 0)
             self.joyNameCombo = QComboBox()
@@ -194,7 +193,7 @@ class JoystickMapper(QMainWindow):
             self.headerLayout.addWidget(self.joyNameCombo, 0, 1, Qt.AlignmentFlag.AlignVCenter)
             QTimer.singleShot(5000, self.checkJoysticks)
 
-            layout_lbl = QLabel(langtexts.getHeaderText("lay"))
+            layout_lbl = QLabel(getHeaderText("lay"))
             layout_lbl.setFont(font)
             self.headerLayout.addWidget(layout_lbl, 0, 2)
             self.layoutCombo = QComboBox()
@@ -211,7 +210,7 @@ class JoystickMapper(QMainWindow):
             self.toggleInspect.setMinimumWidth(120)
             self.toggleInspect.setMinimumHeight(30)
             self.toggleInspect.setFont(font)
-            self.toggleInspect.setText(langtexts.getHeaderText("norm") if self.inspectMode else langtexts.getHeaderText("deb"))
+            self.toggleInspect.setText(getHeaderText("norm") if self.inspectMode else getHeaderText("deb"))
             self.toggleInspect.clicked.connect(self.toggleInspectMode)
             self.headerLayout.addWidget(self.toggleInspect, 0, 4)
 
@@ -222,7 +221,7 @@ class JoystickMapper(QMainWindow):
             self.saveConfig_btn.setMinimumWidth(120)
             self.saveConfig_btn.setMinimumHeight(30)
             self.saveConfig_btn.setFont(font)
-            self.saveConfig_btn.setText(langtexts.getHeaderText("save"))
+            self.saveConfig_btn.setText(getHeaderText("save"))
             self.saveConfig_btn.clicked.connect(self.onSaveConfig)
             self.headerLayout.addWidget(self.saveConfig_btn, 0, 6)
 
@@ -258,9 +257,9 @@ class JoystickMapper(QMainWindow):
         else:
             self.joystick_widget.hide()
 
-        self.notAssignedText = langtexts.getButtonValueText("no")
-        self.alreadyAssignedText = langtexts.getButtonValueText("rep")
-        self.omittedText = langtexts.getButtonValueText("omi")
+        self.notAssignedText = getButtonValueText("no")
+        self.alreadyAssignedText = getButtonValueText("rep")
+        self.omittedText = getButtonValueText("omi")
 
         self.setupLayoutGrid()
 
@@ -276,9 +275,9 @@ class JoystickMapper(QMainWindow):
             rowIndex += 1
 
         self.statusBar = QStatusBar()
-        self.defaultText = langtexts.getStatusText("default")
-        self.homeText = langtexts.getStatusText("home")
-        self.repeatedText = langtexts.getStatusText("repeated")
+        self.defaultText = getStatusText("default")
+        self.homeText = getStatusText("home")
+        self.repeatedText = getStatusText("repeated")
         self.statusLabel = QLabel(self.defaultText)
         self.statusBar.addWidget(self.statusLabel)
         if not self.inspectMode:
@@ -337,7 +336,7 @@ class JoystickMapper(QMainWindow):
     def setupUIInspect(self):
 
         self.inspectWidget = ScrollLabel()
-        self.inspectWidget.setStyleSheet(open(utils.resource_path("qss/inspect.qss", module="joystickmapper"), "r").read())
+        self.inspectWidget.setStyleSheet(open(resource_path("qss/inspect.qss", module="joystickmapper"), "r").read())
 
         if self.inspectMode:
             self.mainLayout.addWidget(self.inspectWidget, 0 if self.headlessMode else 1, 0, 1, 4)
@@ -347,58 +346,58 @@ class JoystickMapper(QMainWindow):
     def setupDialogs(self):
 
         self.controllersChangedDialog = QMessageBox(self)
-        self.controllersChangedDialog.setText(langtexts.getDialogsText("changed"))
-        accept = self.controllersChangedDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.controllersChangedDialog.setText(getDialogsText("changed"))
+        accept = self.controllersChangedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
 
         self.controllersChangedHeadlessDialog = QMessageBox(self)
-        self.controllersChangedHeadlessDialog.setText(langtexts.getDialogsText("changed_headless"))
-        accept = self.controllersChangedHeadlessDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.controllersChangedHeadlessDialog.setText(getDialogsText("changed_headless"))
+        accept = self.controllersChangedHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
         self.controllersChangedHeadlessDialog.removeButton(accept)
 
         self.noControllersDialog = QMessageBox(self)
-        self.noControllersDialog.setText(langtexts.getDialogsText("no"))
-        accept = self.noControllersDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.noControllersDialog.setText(getDialogsText("no"))
+        accept = self.noControllersDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
 
         self.noControllersHeadlessDialog = QMessageBox(self)
-        self.noControllersHeadlessDialog.setText(langtexts.getDialogsText("no_headless"))
-        accept = self.noControllersHeadlessDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.noControllersHeadlessDialog.setText(getDialogsText("no_headless"))
+        accept = self.noControllersHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
         self.noControllersHeadlessDialog.removeButton(accept)
 
         self.controllersDisconnectedDialog = QMessageBox(self)
-        self.controllersDisconnectedDialog.setText(langtexts.getDialogsText("disconnected"))
-        accept = self.controllersDisconnectedDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.controllersDisconnectedDialog.setText(getDialogsText("disconnected"))
+        accept = self.controllersDisconnectedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
 
         self.controllersDisconnectedHeadlessDialog = QMessageBox(self)
-        self.controllersDisconnectedHeadlessDialog.setText(langtexts.getDialogsText("disconnected_headless"))
-        accept = self.controllersDisconnectedHeadlessDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.controllersDisconnectedHeadlessDialog.setText(getDialogsText("disconnected_headless"))
+        accept = self.controllersDisconnectedHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
         self.controllersDisconnectedHeadlessDialog.removeButton(accept)
 
         self.controllerConfiguredHeadlessDialog = QMessageBox(self)
-        self.controllerConfiguredHeadlessDialog.setText(langtexts.getDialogsText("success_headless"))
-        accept = self.controllerConfiguredHeadlessDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.controllerConfiguredHeadlessDialog.setText(getDialogsText("success_headless"))
+        accept = self.controllerConfiguredHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
         self.controllerConfiguredHeadlessDialog.removeButton(accept)
 
         self.cancelDialog = QMessageBox(self)
-        self.cancelDialog.setText(langtexts.getDialogsText("cancel"))
-        reject = self.cancelDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.RejectRole)
-        accept = self.cancelDialog.addButton(langtexts.getButtonsText("quit"), QMessageBox.ButtonRole.AcceptRole)
+        self.cancelDialog.setText(getDialogsText("cancel"))
+        reject = self.cancelDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.RejectRole)
+        accept = self.cancelDialog.addButton(getButtonsText("quit"), QMessageBox.ButtonRole.AcceptRole)
         accept.clicked.connect(self.forceClose)
 
         self.changeDialog = QMessageBox(self)
-        self.changeDialog.setText(langtexts.getDialogsText("change"))
-        reject = self.changeDialog.addButton(langtexts.getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
-        accept = self.changeDialog.addButton(langtexts.getButtonsText("change"), QMessageBox.ButtonRole.AcceptRole)
+        self.changeDialog.setText(getDialogsText("change"))
+        reject = self.changeDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
+        accept = self.changeDialog.addButton(getButtonsText("change"), QMessageBox.ButtonRole.AcceptRole)
         accept.clicked.connect(self.changeSelected)
 
         self.saveDialog = QMessageBox(self)
-        self.saveDialog.setText(langtexts.getDialogsText("save"))
-        reject = self.saveDialog.addButton(langtexts.getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
-        accept = self.saveDialog.addButton(langtexts.getButtonsText("save"), QMessageBox.ButtonRole.AcceptRole)
+        self.saveDialog.setText(getDialogsText("save"))
+        reject = self.saveDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
+        accept = self.saveDialog.addButton(getButtonsText("save"), QMessageBox.ButtonRole.AcceptRole)
         accept.clicked.connect(lambda checked: self.saveConfig(True))
 
         self.savedDialog = QMessageBox(self)
-        self.savedDialog.setText(langtexts.getDialogsText("saved"))
-        accept = self.savedDialog.addButton(langtexts.getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.savedDialog.setText(getDialogsText("saved"))
+        accept = self.savedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
 
     def changeSelected(self):
         if self.changeJoystickRequested:
@@ -506,7 +505,7 @@ class JoystickMapper(QMainWindow):
             newWidget = self.scroll
 
         if not self.headlessMode:
-            self.toggleInspect.setText(langtexts.getHeaderText("norm") if self.inspectMode else langtexts.getHeaderText("deb"))
+            self.toggleInspect.setText(getHeaderText("norm") if self.inspectMode else getHeaderText("deb"))
 
         oldWidget.hide()
         self.mainLayout.replaceWidget(oldWidget, newWidget)
@@ -523,7 +522,7 @@ class JoystickMapper(QMainWindow):
             if not self.outputFile:
                 joyName = self.joysticksInfo[self.joystick_id]["name"]
                 padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
-                fileBaseName = utils.get_valid_filename(padLayout + "_" + joyName)
+                fileBaseName = get_valid_filename(padLayout + "_" + joyName)
                 fileName = f"{fileBaseName[0:64]}.json"
                 i = 0
                 while os.path.exists(fileName):
@@ -573,7 +572,7 @@ class JoystickMapper(QMainWindow):
             self.joysticksInfo = joysticksInfo
 
         if self.inspectMode and not self.inspectWidget.text():
-            msg1, msg2 = langtexts.getJoysticksMessages()
+            msg1, msg2 = getJoysticksMessages()
             self.drawButtonValue(msg1)
             for joystick in self.joysticksInfo.keys():
                 self.drawButtonValue(msg2 % (self.joysticksInfo[joystick]["name"],
