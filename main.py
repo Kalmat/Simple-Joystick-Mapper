@@ -1,9 +1,7 @@
-import os
 import signal
 import sys
 import traceback
 
-import pkg_resources
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication
 

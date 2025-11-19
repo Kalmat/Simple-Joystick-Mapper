@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 import sys
@@ -32,7 +31,7 @@ def resource_path(relative_path, inverted=False, use_dist_folder="", module=""):
         found = os.path.exists(ret)
 
     if not found and module:
-        # resource might be inside a wheel (will crash if not installed as module)
+        # resource might be inside a wheel (this will crash otherwise)
         try:
             ret = os.path.normpath(pkg_resources.resource_filename(module, relative_path))
             found = os.path.exists(ret)
@@ -49,7 +48,7 @@ def resource_path(relative_path, inverted=False, use_dist_folder="", module=""):
 
     if found:
         if inverted:
-            # required in some syntax (e.g. .qss)
+            # required for some specific syntax (e.g. in .qss files)
             ret = ret.replace("\\", "/")
         path = ret
 

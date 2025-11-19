@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import pkg_resources
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
@@ -11,13 +10,13 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QRectF, QEvent, QTim
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QMainWindow, QApplication, QStatusBar, QGraphicsView, \
     QGraphicsScene, QGraphicsProxyWidget, QScrollArea, QComboBox, QPushButton, QSizePolicy, QMessageBox, QStyle
 
-import langtexts
-import utils
-from listener import JoystickListener
 from joystickmapper._angles import angles
 from joystickmapper._layouts import homeButton, layouts
 from joystickmapper._modes import Mode
+from listener import JoystickListener
 from scrolllabel import ScrollLabel
+import langtexts
+import utils
 
 
 class JoystickMapper(QMainWindow):
