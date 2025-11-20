@@ -19,9 +19,10 @@ def getArgs():
     pad_layout = Mode.FULL
     joystick_id = None
     angle = Angle.NOT_ROTATED
+    output_file = None
     headless_mode = "--s" in sys.argv
     windowed = "--w" in sys.argv
-    output_file = None
+    force_complete_layout = "--f" in sys.argv
     for i, arg in enumerate(sys.argv):
         if arg == "-l":
             pad_layout = str(sys.argv[i + 1])
@@ -33,7 +34,7 @@ def getArgs():
             angle = int(sys.argv[i + 1])
         elif arg == "-o":
             output_file = str(sys.argv[i + 1])
-    return pad_layout, joystick_id, angle, headless_mode, windowed, output_file
+    return pad_layout, joystick_id, angle, headless_mode, windowed, output_file, force_complete_layout
 
 
 def sigint_handler(*args):
@@ -65,7 +66,9 @@ if __name__ == "__main__":
     showInitMessage()
 
     app = QApplication(sys.argv)
-    pad_layout, joystick_id, angle, headless_mode, windowed, output_file = getArgs()
-    win = JoystickMapper(pad_layout, joystick_id, angle, headless_mode, windowed, output_file)
+    app.setApplicationName("Simple Joystick Mapper")
+    pad_layout, joystick_id, angle, headless_mode, windowed, output_file, force_complete_layout = getArgs()
+    win = JoystickMapper(pad_layout, joystick_id, angle, headless_mode, windowed, output_file,
+                         standalone_mode=True, force_complete_layout=force_complete_layout)
     win.show()
     app.exec()

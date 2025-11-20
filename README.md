@@ -68,3 +68,4 @@ OPTIONS:
 |--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | --s    | Headless mode: suitable for non-mouse environments (e.g. an arcade system or menu).<br>Headless mode will automatically save and exit when last button is successfully configured or omitted. |
 | --w    | Rotated and Headless modes show in fullscreen by default. Use this option to show windowed (and frameless).                                                                                   |
+| --f    | Force to properly configure all buttons before closing (not leaving any as omitted or not assigned).                                                                                          |

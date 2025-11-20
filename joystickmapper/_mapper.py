@@ -25,11 +25,13 @@ class JoystickMapper(QMainWindow):
     _toggleInspectModeSig = pyqtSignal(bool)
 
     def __init__(self, pad_layout, joystick_id=None, angle=0, headless_mode=False, windowed=False, output_file=None,
-                 mapper_closed_sig=None):
+                 standalone_mode=False, force_complete_layout=False, mapper_closed_sig=None):
         super().__init__(None)
 
-        self.setWindowTitle("Simple Joystick Mapper")
-        self.setWindowIcon(QIcon(os.path.join(resource_path("resources/joystick.ico"))))
+        self.standalone = standalone_mode
+        if self.standalone:
+            self.setWindowTitle("Simple Joystick Mapper")
+            self.setWindowIcon(QIcon(os.path.join(resource_path("resources/joystick.ico"))))
 
         self.inspectMode = pad_layout == Mode.INSPECT
         self.mapperClosedSig = mapper_closed_sig
@@ -65,6 +67,7 @@ class JoystickMapper(QMainWindow):
         if windowed and (self.headlessMode or self.rotateWidget):
             self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         self.outputFile = output_file
+        self.forceCompleteLayout = force_complete_layout
 
         self.setupUI()
         self.setupUIInspect()
@@ -379,7 +382,7 @@ class JoystickMapper(QMainWindow):
 
         self.cancelDialog = QMessageBox(self)
         self.cancelDialog.setText(getDialogsText("cancel"))
-        reject = self.cancelDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.RejectRole)
+        reject = self.cancelDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
         accept = self.cancelDialog.addButton(getButtonsText("quit"), QMessageBox.ButtonRole.AcceptRole)
         accept.clicked.connect(self.forceClose)
 
@@ -388,6 +391,15 @@ class JoystickMapper(QMainWindow):
         reject = self.changeDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
         accept = self.changeDialog.addButton(getButtonsText("change"), QMessageBox.ButtonRole.AcceptRole)
         accept.clicked.connect(self.changeSelected)
+
+        self.completeLayoutDialog = QMessageBox(self)
+        self.completeLayoutDialog.setText(getDialogsText("complete"))
+        accept = self.completeLayoutDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.RejectRole)
+
+        self.completeLayoutHeadlessDialog = QMessageBox(self)
+        self.completeLayoutHeadlessDialog.setText(getDialogsText("complete_headless"))
+        accept = self.completeLayoutHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
+        self.completeLayoutHeadlessDialog.removeButton(accept)
 
         self.saveDialog = QMessageBox(self)
         self.saveDialog.setText(getDialogsText("save"))
@@ -518,35 +530,41 @@ class JoystickMapper(QMainWindow):
 
     def saveConfig(self, force=False):
 
-        if force or (self.headlessMode and not self.inspectMode):
+        if self.forceCompleteLayout and self.joystick_id is not None and len(self.padLayout) != len(list(self.padValues[self.joystick_id]["layout"].keys())):
+            if not self.headlessMode:
+                self.completeLayoutDialog.exec()
 
-            saveConfig = self.joystick_id is not None
-            if not self.outputFile:
-                if self.joystick_id is not None:
-                    joyName = self.joysticksInfo[self.joystick_id]["name"]
-                    padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
-                    fileBaseName = get_valid_filename(padLayout + "_" + joyName)
-                    fileName = f"{fileBaseName[0:64]}.json"
-                    i = 0
-                    while os.path.exists(fileName):
-                        i += 1
-                        fileName = f"{fileBaseName}_{i}.json"
+        else:
+
+            if force or (self.headlessMode and not self.inspectMode):
+
+                saveConfig = self.joystick_id is not None
+                if not self.outputFile:
+                    if self.joystick_id is not None:
+                        joyName = self.joysticksInfo[self.joystick_id]["name"]
+                        padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
+                        fileBaseName = get_valid_filename(padLayout + "_" + joyName)
+                        fileName = f"{fileBaseName[0:64]}.json"
+                        i = 0
+                        while os.path.exists(fileName):
+                            i += 1
+                            fileName = f"{fileBaseName}_{i}.json"
+                    else:
+                        saveConfig = False
+                        fileName = ""
                 else:
-                    saveConfig = False
-                    fileName = ""
-            else:
-                fileName = self.outputFile
-            if saveConfig:
-                output = {
-                    "joysticks_info": self.joysticksInfo,
-                    "joystick_configured": self.joystick_id,
-                    self.joystick_id: self.padValues[self.joystick_id]["layout"]
-                }
-                with open(fileName, "w", encoding="utf8") as f:
-                    json.dump(output, f, ensure_ascii=False, sort_keys=False, indent=4)
+                    fileName = self.outputFile
+                if saveConfig:
+                    output = {
+                        "joysticks_info": self.joysticksInfo,
+                        "joystick_configured": self.joystick_id,
+                        self.joystick_id: self.padValues[self.joystick_id]["layout"]
+                    }
+                    with open(fileName, "w", encoding="utf8") as f:
+                        json.dump(output, f, ensure_ascii=False, sort_keys=False, indent=4)
 
-                if not self.headlessMode:
-                    self.savedDialog.exec()
+                    if not self.headlessMode:
+                        self.savedDialog.exec()
 
     @pyqtSlot(dict)
     def getJoysticks(self, joysticksInfo):
@@ -794,9 +812,16 @@ class JoystickMapper(QMainWindow):
         w.update()
         w.hide()
         w.show()
-        self.configEnded = True
-        QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.controllerConfiguredHeadlessDialog))
-        self.controllerConfiguredHeadlessDialog.exec()
+        if self.forceCompleteLayout and self.joystick_id is not None and len(self.padLayout) != len(list(self.padValues[self.joystick_id]["layout"].keys())):
+            if self.headlessMode:
+                QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.completeLayoutHeadlessDialog))
+                self.completeLayoutHeadlessDialog.exec()
+            else:
+                self.completeLayoutDialog.exec()
+        else:
+            self.configEnded = True
+            QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.controllerConfiguredHeadlessDialog))
+            self.controllerConfiguredHeadlessDialog.exec()
 
     def forceClose(self, checked=False, dialog_to_close=None):
         self.forceCloseRequested = True
@@ -812,7 +837,7 @@ class JoystickMapper(QMainWindow):
             self.saveConfig()
             if self.mapperClosedSig is not None:
                 self.mapperClosedSig.emit(self.configEnded)
-            if "joystickmapper" in sys.executable.lower() or ("python" in sys.executable.lower() and "main.py" in sys.argv[0]):
+            if self.standalone:
                 # only force exit if running in standalone mode
                 sys.exit()
 

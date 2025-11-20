@@ -36,7 +36,8 @@ def getInitMessage(lang="es"):
            "\tOPTIONS:\n" \
            "\t\t--s\tHeadless mode: suitable for non-mouse environments (e.g. an arcade system or menu).\n" \
            "\t\t\tHeadless mode will automatically save and exit when last button is successfully configured or omitted.\n" \
-           "\t\t--w\tHeadless mode shows in fullscreen by default. Use this option to show windowed (and frameless).\n\n"
+           "\t\t--w\tHeadless mode shows in fullscreen by default. Use this option to show windowed (and frameless).\n" \
+           "\t\t--f\tForce to properly configure all buttons before closing (not leaving any as omitted or not assigned).\n\n"
 
 
 def getJoysticksMessages(lang="es"):
@@ -204,8 +205,26 @@ def getDialogsText(text, lang="es"):
                    "To save the current configuration, press 'Save' before changing.\n\n" \
                    "Do you want to change now?"
 
+    elif text == "complete":
+        if lang == "es":
+            return "Debes configurar todos los botones para evitar fallos.\n" \
+                   "No se guardará ninguna configuración.\n\n"
+        else:
+            return "You must configure all buttons to avoid failures.\n" \
+                    "No configuration will be saved\n\n"
+
+    elif text == "complete_headless":
+        if lang == "es":
+            return "Debes configurar todos los botones para evitar fallos.\n" \
+                   "No se guardará ninguna configuración.\n\n" \
+                   "Esta ventana se cerrará en 3 segundos.\n\n"
+        else:
+            return "You must configure all buttons to avoid failures.\n" \
+                   "No configuration will be saved.\n\n" \
+                   "This dialog will automatically close in 3 seconds.\n\n"
+
     elif text == "save":
-        if lang  == "es":
+        if lang == "es":
             return "Estás a punto de guardar esta configuración.\n\n" \
                    "¿Deseas guardar ahora?"
         else:
