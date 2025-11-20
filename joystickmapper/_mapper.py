@@ -93,9 +93,9 @@ class JoystickMapper(QMainWindow):
         self.listener_thread.setTerminationEnabled(True)
         self.listener_thread.started.connect(self.listener_obj.run)
         self.listener_thread.finished.connect(self.listener_obj.stop)
-        self.listener_thread.start()
 
     def show(self, force_full=False):
+        self.listener_thread.start()
         if force_full or ((self.headlessMode or self.rotateWidget) and not self.windowed):
             super().showFullScreen()
         else:
@@ -400,13 +400,11 @@ class JoystickMapper(QMainWindow):
         accept = self.savedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
 
     def changeSelected(self):
-        if self.changeJoystickRequested:
+        if self.changeJoystickRequested is not None:
             self.changeJoystick(self.changeJoystickRequested)
-            self.changeJoystickRequested = False
 
-        elif self.changeLayoutRequested:
+        elif self.changeLayoutRequested is not None:
             self.changeLayout(self.changeLayoutRequested)
-            self.changeLayoutRequested = False
 
     def onChangeJoystick(self, index):
         if self.joyNameCombo.count() > 0:
@@ -426,6 +424,7 @@ class JoystickMapper(QMainWindow):
                     self.addedEvents[self.joystick_id] = {}
                 self.joystick_id = joystick_id
                 self.changeLayout(self.layoutCombo.currentIndex(), force=True)
+        self.changeJoystickRequested = None
 
     def checkJoysticks(self):
         if not self.joysticksInfo:
@@ -436,7 +435,7 @@ class JoystickMapper(QMainWindow):
                 self.noControllersDialog.exec()
 
     def onChangeLayout(self, index):
-        self.changeLayoutRequested = True
+        self.changeLayoutRequested = index
         if self.joystick_id is not None and self.joystick_id in self.padValues.keys() and self.padValues[self.joystick_id]["layout"]:
             self.changeDialog.exec()
         else:
@@ -445,9 +444,7 @@ class JoystickMapper(QMainWindow):
     def changeLayout(self, index, force=False):
         pad_layout_name = ""
         if not self.headlessMode:
-            if self.changeLayoutRequested:
-                self.changeLayoutRequested = False
-                pad_layout_name = self.layoutCombo.itemText(index)
+            pad_layout_name = self.layoutCombo.itemText(index)
 
         if force or self.selectedPadLayout != pad_layout_name:
             if pad_layout_name:
@@ -458,14 +455,16 @@ class JoystickMapper(QMainWindow):
                 if i < len(self.padLayout):
                     objectName = self.selected_style_tag if i == 0 else self.idle_style_tag
                     button = self.padLayout[i]
-                    button_widget.setStyleSheet(self.main_style)
                     button_widget.setObjectName(objectName)
+                    button_widget.setStyleSheet(self.main_style)
                     button_label = button_widget.layout().itemAt(0).widget()
                     button_label.setText(button)
                     button_label.setObjectName(objectName)
+                    button_label.setStyleSheet(self.main_style)
                     button_value = button_widget.layout().itemAt(1).widget()
                     button_value.setText(self.notAssignedText)
                     button_value.setObjectName(objectName)
+                    button_value.setStyleSheet(self.main_style)
                     button_widget.show()
                 else:
                     button_widget.hide()
@@ -475,6 +474,8 @@ class JoystickMapper(QMainWindow):
                 self.padValues[self.joystick_id]["layout"] = {}
             if self.joystick_id in self.addedEvents.keys():
                 self.addedEvents[self.joystick_id] = {}
+
+        self.changeLayoutRequested = None
 
     def toggleInspectMode(self, checked=False):
 
@@ -519,27 +520,33 @@ class JoystickMapper(QMainWindow):
 
         if force or (self.headlessMode and not self.inspectMode):
 
+            saveConfig = self.joystick_id is not None
             if not self.outputFile:
-                joyName = self.joysticksInfo[self.joystick_id]["name"]
-                padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
-                fileBaseName = get_valid_filename(padLayout + "_" + joyName)
-                fileName = f"{fileBaseName[0:64]}.json"
-                i = 0
-                while os.path.exists(fileName):
-                    i += 1
-                    fileName = f"{fileBaseName}_{i}.json"
+                if self.joystick_id is not None:
+                    joyName = self.joysticksInfo[self.joystick_id]["name"]
+                    padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
+                    fileBaseName = get_valid_filename(padLayout + "_" + joyName)
+                    fileName = f"{fileBaseName[0:64]}.json"
+                    i = 0
+                    while os.path.exists(fileName):
+                        i += 1
+                        fileName = f"{fileBaseName}_{i}.json"
+                else:
+                    saveConfig = False
+                    fileName = ""
             else:
                 fileName = self.outputFile
-            output = {
-                "joysticks_info": self.joysticksInfo,
-                "joystick_configured": self.joystick_id,
-                self.joystick_id: self.padValues[self.joystick_id]["layout"]
-            }
-            with open(fileName, "w", encoding="utf8") as f:
-                json.dump(output, f, ensure_ascii=False, sort_keys=False, indent=4)
+            if saveConfig:
+                output = {
+                    "joysticks_info": self.joysticksInfo,
+                    "joystick_configured": self.joystick_id,
+                    self.joystick_id: self.padValues[self.joystick_id]["layout"]
+                }
+                with open(fileName, "w", encoding="utf8") as f:
+                    json.dump(output, f, ensure_ascii=False, sort_keys=False, indent=4)
 
-            if not self.headlessMode:
-                self.savedDialog.exec()
+                if not self.headlessMode:
+                    self.savedDialog.exec()
 
     @pyqtSlot(dict)
     def getJoysticks(self, joysticksInfo):
@@ -698,7 +705,8 @@ class JoystickMapper(QMainWindow):
                         self.endConfig(prevIndex, valueDesc)
                     else:
                         self.currentIndex = prevIndex
-                self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
+                if not self.configEnded:
+                    self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
 
     def checkNextButton(self, index, prevIndex, valueDesc=""):
         if 0 <= prevIndex <= len(self.padLayout):
@@ -804,7 +812,9 @@ class JoystickMapper(QMainWindow):
             self.saveConfig()
             if self.mapperClosedSig is not None:
                 self.mapperClosedSig.emit(self.configEnded)
-            sys.exit()
+            if "joystickmapper" in sys.executable.lower() or ("python" in sys.executable.lower() and "main.py" in sys.argv[0]):
+                # only force exit if running in standalone mode
+                sys.exit()
 
         else:
             a0.ignore()

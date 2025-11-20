@@ -5,7 +5,7 @@ homeButton = "HOME"
 layouts = {
     "Menu": ["UP", "DOWN", "LEFT", "RIGHT",
              "A (SOUTH)", "B (EAST)", "X (WEST)", "Y (NORTH)", "L1", "R1",
-             "SELECT", "START", "HELP"],
+             "SELECT", "START"],
     "Retro": ["UP", "DOWN", "LEFT", "RIGHT",
               "A (SOUTH)", "B (EAST)",
               "SELECT", "START"],

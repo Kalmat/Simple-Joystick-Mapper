@@ -50,6 +50,7 @@ def exception_hook(exctype, value, tb):
 
 
 if __name__ == "__main__":
+
     if not is_packaged():
         # This will allow to manage Ctl-C interruption (e.g. when running from IDE)
         signal.signal(signal.SIGINT, sigint_handler)

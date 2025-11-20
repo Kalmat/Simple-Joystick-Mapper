@@ -11,9 +11,6 @@ class JoystickListener(QThread):
     def __init__(self, parent, joysticksConnectedSig, buttonValueSig, toggleInspectModeSig, free_mode=False):
         super().__init__(parent)
 
-        pygame.init()
-        pygame.joystick.init()
-
         self.joysticksConnectedSig = joysticksConnectedSig
         self.buttonValueSig = buttonValueSig
         self.freeMode = free_mode
@@ -23,7 +20,6 @@ class JoystickListener(QThread):
 
         self.joysticks = []
         self.joysticksInfo = {}
-        self.joysticksCount = 0
 
         self.clock = pygame.time.Clock()
         self.fps = 60
@@ -54,7 +50,8 @@ class JoystickListener(QThread):
         return joysticks, joysticksInfo
 
     def closeListener(self):
-        if pygame.joystick.get_init():
+        if pygame.joystick.get_init() and not self.pygameJoystickPreInitialized:
+            # pygame.joystick system might be initialized by "parent" script. Not quitting here
             for joystick in self.joysticks:
                 if joystick.get_init():
                     try:
@@ -65,7 +62,8 @@ class JoystickListener(QThread):
                 pygame.joystick.quit()
             except:
                 pass
-        if pygame.get_init():
+        if pygame.get_init() and not self.pygamePreInitialized:
+            # pygame might be initialized by "parent" script. Not quitting here
             try:
                 pygame.quit()
             except:
@@ -73,7 +71,19 @@ class JoystickListener(QThread):
 
     def run(self):
 
-        while self.keepListening and pygame.get_init() and pygame.joystick.get_init():
+        # initialize everything if not previously initialized
+        self.pygamePreInitialized = pygame.get_init()
+        self.pygameJoystickPreInitialized = pygame.joystick.get_init()
+        if not self.pygamePreInitialized:
+            pygame.init()
+        if not self.pygameJoystickPreInitialized:
+            pygame.joystick.init()
+
+        # get and emit connected joysticks info
+        self.joysticks, self.joysticksInfo = self.addJoysticks()
+        self.joysticksConnectedSig.emit(self.joysticksInfo)
+
+        while self.keepListening:
 
             if self.counter is not None:
                 self.counter += 1
@@ -86,9 +96,10 @@ class JoystickListener(QThread):
             for event in pygame.event.get():
 
                 if event.type in (pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED):
-                    self.joysticksCount = self.joysticksCount + (1 if event.type == pygame.JOYDEVICEADDED else -1)
-                    if self.joysticksCount == pygame.joystick.get_count():
-                        self.joysticks, self.joysticksInfo = self.addJoysticks()
+                    self.joysticks, joysticksInfo = self.addJoysticks()
+                    if self.joysticksInfo != joysticksInfo:
+                        # update joysticks info in case it changes
+                        self.joysticksInfo = joysticksInfo
                         self.joysticksConnectedSig.emit(self.joysticksInfo)
 
                 if self.freeMode:
@@ -98,7 +109,6 @@ class JoystickListener(QThread):
                 else:
 
                     if event.type == pygame.JOYBUTTONDOWN:
-                        self.counter = 0
                         self.counter = 0
 
                     elif event.type in (pygame.JOYBUTTONUP, pygame.JOYAXISMOTION, pygame.JOYHATMOTION):
