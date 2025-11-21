@@ -1,19 +1,18 @@
+import copy
 import json
 import os
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
 
-from PyQt5.QtGui import QFontMetrics, QIcon
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QRectF, QEvent, QTimer
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QMainWindow, QApplication, QStatusBar, QGraphicsView, \
-    QGraphicsScene, QGraphicsProxyWidget, QScrollArea, QComboBox, QPushButton, QSizePolicy, QMessageBox, QStyle
+from PyQt5.QtWidgets import QMainWindow, QApplication, QStyle, QFileDialog
 
-from ._angles import angles
-from ._layouts import homeButton, layouts
-from ._modes import Mode
 from ._listener import JoystickListener
-from ._scrolllabel import ScrollLabel
+from ._ui import MainWindow_UI
+from ._layouts import homeButton
+from ._modes import Mode
 from ._langtexts import *
 from ._utils import *
 
@@ -69,11 +68,19 @@ class JoystickMapper(QMainWindow):
         self.outputFile = output_file
         self.forceCompleteLayout = force_complete_layout
 
-        self.setupUI()
-        self.setupUIInspect()
-        self.setupDialogs()
+        # get connected joysticks
+        QTimer.singleShot(5000, self.checkJoysticks)
 
-        self.addedEvents = {}
+        # setup UI and signals
+        self.ui = MainWindow_UI(self, self.rotateWidget, self.angle, self.headlessMode, self.inspectMode,
+                                self.windowed, self.padLayout, self.layouts[Mode.FULL])
+        self.connectUISignals()
+
+        # set first button and variables
+        self.currentIndex = 0
+        self.currentButton = self.padLayout[0]
+        self.updateNextButton(self.currentIndex, -1)
+
         self.padValues = {}
         self.joysticksInfo = {}
 
@@ -81,6 +88,7 @@ class JoystickMapper(QMainWindow):
         self.forceCloseRequested = False
         self.changeJoystickRequested = None
         self.changeLayoutRequested = None
+        self.layoutLoaded = False
 
         if self.inspectMode:
             if os.path.exists("joystickmapper_inspect.txt"):
@@ -96,6 +104,22 @@ class JoystickMapper(QMainWindow):
         self.listener_thread.setTerminationEnabled(True)
         self.listener_thread.started.connect(self.listener_obj.run)
         self.listener_thread.finished.connect(self.listener_obj.stop)
+
+    def connectUISignals(self):
+
+        # connect UI signals
+        self.ui.joyNameCombo.currentIndexChanged.connect(self.onChangeJoystick)
+        self.ui.layoutCombo.addItems(list(self.layouts.keys()))
+        self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
+        self.ui.layoutCombo.currentIndexChanged.connect(self.onChangeLayout)
+        self.ui.toggleInspect.clicked.connect(self.toggleInspectMode)
+        self.ui.saveConfig_btn.clicked.connect(self.onSaveConfig)
+        self.ui.loadConfig_btn.clicked.connect(self.loadConfig)
+
+        # connect dialogs buttons
+        self.ui.cancelDialog_btn.clicked.connect(self.forceClose)
+        self.ui.changeDialog_btn.clicked.connect(self.changeSelected)
+        self.ui.saveDialog_btn.clicked.connect(lambda checked: self.saveConfig(True))
 
     def show(self, force_full=False):
         self.listener_thread.start()
@@ -124,293 +148,6 @@ class JoystickMapper(QMainWindow):
                     y = (self.screen().availableSize().height() + titleBarHeight - h) // 2
                 self.setGeometry(x, y, w, h)
 
-    def setupUI(self):
-
-        self.setMinimumWidth(860)
-
-        self.header_style = open(resource_path("qss/header.qss", module="joystickmapper"), "r").read()
-        self.main_style = open(resource_path("qss/main.qss", module="joystickmapper"), "r").read()
-        self.selected_style_tag = "selected"
-        self.idle_style_tag = "idle"
-
-        self.mainWidget = QWidget()
-        self.mainLayout = QGridLayout()
-        if self.rotateWidget:
-            self.mainLayout.setContentsMargins(5, 0, 5, 0)
-        else:
-            self.mainLayout.setContentsMargins(0, 5, 0, 5)
-
-        if self.rotateWidget:
-            self.widget2 = QWidget()
-            self.myLayout2 = QGridLayout()
-            self.myLayout2.setContentsMargins(0, 0, 0, 0)
-            self.myLayout2.setSpacing(0)
-            self.myLayout2.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-
-            self.graphicsview = QGraphicsView(self)
-            self.graphicsview.setInteractive(True)
-            self.graphicsview.installEventFilter(self)
-            self.graphicsview.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            self.graphicsview.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            self.scene = QGraphicsScene(self.graphicsview)
-            self.graphicsview.setScene(self.scene)
-
-            self.proxy = QGraphicsProxyWidget()
-            self.proxy.setWidget(self.widget2)
-            self.proxy.setTransformOriginPoint(self.proxy.boundingRect().center())
-            self.scene.addItem(self.proxy)
-            if not self.windowed:
-                h, w = self.screen().size().width(), self.screen().size().height()
-                self.graphicsview.setGeometry(0, 0, w, h)
-                self.proxy.setGeometry(QRectF(0, 0, w, h))
-            self.myLayout2.addWidget(self.graphicsview)
-
-        self.buttonsFont = self.font()
-        self.buttonsFont.setFamily("MS Shell Dlg 2")
-        self.buttonsFont.setPointSize(self.buttonsFont.pointSize() + 4)
-        self.buttonsFontHeight = QFontMetrics(self.buttonsFont).height()
-
-        rowIndex = 0
-
-        if not self.headlessMode:
-            self.headerWidget = QWidget()
-            self.headerWidget.setStyleSheet(self.header_style)
-            font = self.headerWidget.font()
-            font.setPointSize(font.pointSize() + 1)
-            font.setFamily("MS Shell Dlg 2")
-            self.headerWidget.setFont(font)
-            self.headerLayout = QGridLayout()
-            self.headerLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-            self.headerWidget.setLayout(self.headerLayout)
-
-            joyName_lbl = QLabel(getHeaderText("joy"))
-            joyName_lbl.setFont(font)
-            self.headerLayout.addWidget(joyName_lbl, 0, 0)
-            self.joyNameCombo = QComboBox()
-            self.joyNameCombo.setFont(font)
-            self.joyNameCombo.setMinimumWidth(300)
-            self.joyNameCombo.setMaximumWidth(500)
-            self.joyNameCombo.setMinimumHeight(30)
-            self.joyNameCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-            self.joyNameCombo.currentIndexChanged.connect(self.onChangeJoystick)
-            self.headerLayout.addWidget(self.joyNameCombo, 0, 1, Qt.AlignmentFlag.AlignVCenter)
-            QTimer.singleShot(5000, self.checkJoysticks)
-
-            layout_lbl = QLabel(getHeaderText("lay"))
-            layout_lbl.setFont(font)
-            self.headerLayout.addWidget(layout_lbl, 0, 2)
-            self.layoutCombo = QComboBox()
-            self.layoutCombo.setFont(font)
-            self.layoutCombo.setMaximumWidth(200)
-            self.layoutCombo.setMinimumHeight(30)
-            self.layoutCombo.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-            self.layoutCombo.addItems(list(self.layouts.keys()))
-            self.layoutCombo.setCurrentText(self.selectedPadLayout)
-            self.layoutCombo.currentIndexChanged.connect(self.onChangeLayout)
-            self.headerLayout.addWidget(self.layoutCombo, 0, 3, Qt.AlignmentFlag.AlignVCenter)
-
-            self.toggleInspect = QPushButton()
-            self.toggleInspect.setMinimumWidth(120)
-            self.toggleInspect.setMinimumHeight(30)
-            self.toggleInspect.setFont(font)
-            self.toggleInspect.setText(getHeaderText("norm") if self.inspectMode else getHeaderText("deb"))
-            self.toggleInspect.clicked.connect(self.toggleInspectMode)
-            self.headerLayout.addWidget(self.toggleInspect, 0, 4)
-
-            dummylabel = QLabel()
-            self.headerLayout.addWidget(dummylabel, 0, 5)
-
-            self.saveConfig_btn = QPushButton()
-            self.saveConfig_btn.setMinimumWidth(120)
-            self.saveConfig_btn.setMinimumHeight(30)
-            self.saveConfig_btn.setFont(font)
-            self.saveConfig_btn.setText(getHeaderText("save"))
-            self.saveConfig_btn.clicked.connect(self.onSaveConfig)
-            self.headerLayout.addWidget(self.saveConfig_btn, 0, 6)
-
-            self.headerLayout.setColumnStretch(0, 0)
-            self.headerLayout.setColumnStretch(1, 0)
-            self.headerLayout.setColumnStretch(2, 0)
-            self.headerLayout.setColumnStretch(3, 0)
-            self.headerLayout.setColumnStretch(4, 0)
-            self.headerLayout.setColumnStretch(5, 1)
-            self.headerLayout.setColumnStretch(6, 0)
-
-            self.mainLayout.addWidget(self.headerWidget)
-            rowIndex += 1
-
-        self.joystick_widget = QWidget(self.widget2 if self.rotateWidget else self)
-        self.joystick_widget.setStyleSheet(self.header_style)
-        self.joystick_widget.setContentsMargins(5, 5, 5, 5)
-        joystick_layout = QGridLayout()
-        self.joystick_widget.setLayout(joystick_layout)
-        self.idLabel = QLabel(self.widget2 if self.rotateWidget else self)
-        self.idLabel.setStyleSheet(self.header_style)
-        self.idLabel.setFont(self.buttonsFont)
-        joystick_layout.addWidget(self.idLabel, 0, 0)
-        self.nameLabel = QLabel(self.widget2 if self.rotateWidget else self)
-        self.nameLabel.setStyleSheet(self.header_style)
-        self.nameLabel.setFont(self.buttonsFont)
-        joystick_layout.addWidget(self.nameLabel, 0, 1)
-        joystick_layout.setColumnStretch(0, 0)
-        joystick_layout.setColumnStretch(1, 1)
-        if not self.inspectMode and self.headlessMode:
-            self.mainLayout.addWidget(self.joystick_widget, rowIndex, 0, 1, 2)
-            rowIndex += 1
-        else:
-            self.joystick_widget.hide()
-
-        self.notAssignedText = getButtonValueText("no")
-        self.alreadyAssignedText = getButtonValueText("rep")
-        self.omittedText = getButtonValueText("omi")
-
-        self.setupLayoutGrid()
-
-        self.scroll = QScrollArea(self.widget2 if self.rotateWidget else self)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.scroll.setContentsMargins(0, 0, 0, 0)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.content_widget)
-        if self.inspectMode:
-            self.scroll.hide()
-        else:
-            self.mainLayout.addWidget(self.scroll, rowIndex, 0, 1, 2)
-            rowIndex += 1
-
-        self.statusBar = QStatusBar()
-        self.defaultText = getStatusText("default")
-        self.homeText = getStatusText("home")
-        self.repeatedText = getStatusText("repeated")
-        self.statusLabel = QLabel(self.defaultText)
-        self.statusBar.addWidget(self.statusLabel)
-        if not self.inspectMode:
-            self.mainLayout.addWidget(self.statusBar, rowIndex, 0, 1, 2)
-
-        self.checkNextButton(self.currentIndex, -1)
-        self.scroll.verticalScrollBar().setValue(0)
-
-        if self.rotateWidget:
-            self.widget2.setLayout(self.mainLayout)
-            self.mainWidget.setLayout(self.myLayout2)
-            self.proxy.setRotation(self.angle)
-        else:
-            self.mainWidget.setLayout(self.mainLayout)
-        self.setCentralWidget(self.mainWidget)
-
-    def setupLayoutGrid(self):
-
-        self.currentIndex = 0
-        self.currentButton = self.padLayout[0]
-
-        self.button_widget_margin = 15
-        self.content_widget = QWidget(self.widget2 if self.rotateWidget else self)
-        self.content_widget.setStyleSheet(self.main_style)
-        self.content_layout = QGridLayout()
-        self.content_widget.setLayout(self.content_layout)
-
-        for i, button in enumerate(self.layouts[Mode.FULL]):
-            if i < len(self.padLayout):
-                button = self.padLayout[i]
-            if i == 0:
-                objectName = self.selected_style_tag
-            else:
-                objectName = self.idle_style_tag
-            button_widget = QWidget(self.widget2 if self.rotateWidget else self)
-            button_widget.setObjectName(objectName)
-            button_widget.setStyleSheet(self.main_style)
-            button_widget.setContentsMargins(5, self.button_widget_margin, 5, self.button_widget_margin)
-            button_layout = QGridLayout()
-            button_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            button_widget.setLayout(button_layout)
-            button_label = QLabel(button, self.widget2 if self.rotateWidget else self)
-            button_label.setObjectName(objectName)
-            button_label.setFont(self.buttonsFont)
-            button_layout.addWidget(button_label, 0, 0, 1, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            button_value = QLabel(self.notAssignedText, self.widget2 if self.rotateWidget else self)
-            button_value.setObjectName(objectName)
-            button_value.setFont(self.buttonsFont)
-            button_layout.addWidget(button_value, 0, 1, 1, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            button_layout.setColumnStretch(0, 1)
-            button_layout.setColumnStretch(1, 0)
-            self.content_layout.addWidget(button_widget, i, 0, 1, 2)
-            if i >= len(self.padLayout):
-                button_widget.hide()
-
-    def setupUIInspect(self):
-
-        self.inspectWidget = ScrollLabel()
-        self.inspectWidget.setStyleSheet(open(resource_path("qss/inspect.qss", module="joystickmapper"), "r").read())
-
-        if self.inspectMode:
-            self.mainLayout.addWidget(self.inspectWidget, 0 if self.headlessMode else 1, 0, 1, 4)
-        else:
-            self.inspectWidget.hide()
-
-    def setupDialogs(self):
-
-        self.controllersChangedDialog = QMessageBox(self)
-        self.controllersChangedDialog.setText(getDialogsText("changed"))
-        accept = self.controllersChangedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-
-        self.controllersChangedHeadlessDialog = QMessageBox(self)
-        self.controllersChangedHeadlessDialog.setText(getDialogsText("changed_headless"))
-        accept = self.controllersChangedHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-        self.controllersChangedHeadlessDialog.removeButton(accept)
-
-        self.noControllersDialog = QMessageBox(self)
-        self.noControllersDialog.setText(getDialogsText("no"))
-        accept = self.noControllersDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-
-        self.noControllersHeadlessDialog = QMessageBox(self)
-        self.noControllersHeadlessDialog.setText(getDialogsText("no_headless"))
-        accept = self.noControllersHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-        self.noControllersHeadlessDialog.removeButton(accept)
-
-        self.controllersDisconnectedDialog = QMessageBox(self)
-        self.controllersDisconnectedDialog.setText(getDialogsText("disconnected"))
-        accept = self.controllersDisconnectedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-
-        self.controllersDisconnectedHeadlessDialog = QMessageBox(self)
-        self.controllersDisconnectedHeadlessDialog.setText(getDialogsText("disconnected_headless"))
-        accept = self.controllersDisconnectedHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-        self.controllersDisconnectedHeadlessDialog.removeButton(accept)
-
-        self.controllerConfiguredHeadlessDialog = QMessageBox(self)
-        self.controllerConfiguredHeadlessDialog.setText(getDialogsText("success_headless"))
-        accept = self.controllerConfiguredHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-        self.controllerConfiguredHeadlessDialog.removeButton(accept)
-
-        self.cancelDialog = QMessageBox(self)
-        self.cancelDialog.setText(getDialogsText("cancel"))
-        reject = self.cancelDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
-        accept = self.cancelDialog.addButton(getButtonsText("quit"), QMessageBox.ButtonRole.AcceptRole)
-        accept.clicked.connect(self.forceClose)
-
-        self.changeDialog = QMessageBox(self)
-        self.changeDialog.setText(getDialogsText("change"))
-        reject = self.changeDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
-        accept = self.changeDialog.addButton(getButtonsText("change"), QMessageBox.ButtonRole.AcceptRole)
-        accept.clicked.connect(self.changeSelected)
-
-        self.completeLayoutDialog = QMessageBox(self)
-        self.completeLayoutDialog.setText(getDialogsText("complete"))
-        accept = self.completeLayoutDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.RejectRole)
-
-        self.completeLayoutHeadlessDialog = QMessageBox(self)
-        self.completeLayoutHeadlessDialog.setText(getDialogsText("complete_headless"))
-        accept = self.completeLayoutHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-        self.completeLayoutHeadlessDialog.removeButton(accept)
-
-        self.saveDialog = QMessageBox(self)
-        self.saveDialog.setText(getDialogsText("save"))
-        reject = self.saveDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)
-        accept = self.saveDialog.addButton(getButtonsText("save"), QMessageBox.ButtonRole.AcceptRole)
-        accept.clicked.connect(lambda checked: self.saveConfig(True))
-
-        self.savedDialog = QMessageBox(self)
-        self.savedDialog.setText(getDialogsText("saved"))
-        accept = self.savedDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
-
     def changeSelected(self):
         if self.changeJoystickRequested is not None:
             self.changeJoystick(self.changeJoystickRequested)
@@ -419,75 +156,60 @@ class JoystickMapper(QMainWindow):
             self.changeLayout(self.changeLayoutRequested)
 
     def onChangeJoystick(self, index):
-        if self.joyNameCombo.count() > 0:
+        if self.ui.joyNameCombo.count() > 0:
             self.changeJoystickRequested = index
             if self.joystick_id is not None and self.joystick_id in self.padValues.keys() and self.padValues[self.joystick_id]["layout"]:
-                self.changeDialog.exec()
+                self.ui.changeDialog.exec()
             else:
                 self.changeJoystick(index)
 
     def changeJoystick(self, index):
-        if self.joyNameCombo.count() > 0:
-            joystick_id = self.joyNameCombo.itemText(index).split(":")[0]
+        if self.ui.joyNameCombo.count() > 0:
+            joystick_id = self.ui.joyNameCombo.itemText(index).split(":")[0]
             if joystick_id != self.joystick_id:
                 if self.joystick_id in self.padValues.keys():
-                    self.padValues[self.joystick_id]["layout"] = {}
-                if self.joystick_id in self.addedEvents.keys():
-                    self.addedEvents[self.joystick_id] = {}
+                    if self.layoutLoaded:
+                        self.padValues[self.joystick_id]["layout"] = copy.deepcopy(self.padValues[joystick_id]["layout"])
+                        self.padValues[joystick_id]["layout"] = {}
+                    else:
+                        self.padValues[self.joystick_id]["layout"] = {}
                 self.joystick_id = joystick_id
-                self.changeLayout(self.layoutCombo.currentIndex(), force=True)
+                if not self.layoutLoaded:
+                    self.changeLayout(self.ui.layoutCombo.currentIndex(), force=True)
         self.changeJoystickRequested = None
 
     def checkJoysticks(self):
         if not self.joysticksInfo:
             if self.headlessMode:
-                QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.noControllersHeadlessDialog))
-                self.noControllersHeadlessDialog.exec()
+                QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.ui.noControllersHeadlessDialog))
+                self.ui.noControllersHeadlessDialog.exec()
             else:
-                self.noControllersDialog.exec()
+                self.ui.noControllersDialog.exec()
 
     def onChangeLayout(self, index):
         self.changeLayoutRequested = index
         if self.joystick_id is not None and self.joystick_id in self.padValues.keys() and self.padValues[self.joystick_id]["layout"]:
-            self.changeDialog.exec()
+            self.ui.changeDialog.exec()
         else:
             self.changeLayout(index)
 
     def changeLayout(self, index, force=False):
         pad_layout_name = ""
         if not self.headlessMode:
-            pad_layout_name = self.layoutCombo.itemText(index)
+            pad_layout_name = self.ui.layoutCombo.itemText(index)
 
         if force or self.selectedPadLayout != pad_layout_name:
             if pad_layout_name:
                 self.selectedPadLayout = pad_layout_name
             self.padLayout = self.layouts[self.selectedPadLayout]
-            for i, button in enumerate(self.layouts[Mode.FULL]):
-                button_widget = self.content_layout.itemAt(i).widget()
-                if i < len(self.padLayout):
-                    objectName = self.selected_style_tag if i == 0 else self.idle_style_tag
-                    button = self.padLayout[i]
-                    button_widget.setObjectName(objectName)
-                    button_widget.setStyleSheet(self.main_style)
-                    button_label = button_widget.layout().itemAt(0).widget()
-                    button_label.setText(button)
-                    button_label.setObjectName(objectName)
-                    button_label.setStyleSheet(self.main_style)
-                    button_value = button_widget.layout().itemAt(1).widget()
-                    button_value.setText(self.notAssignedText)
-                    button_value.setObjectName(objectName)
-                    button_value.setStyleSheet(self.main_style)
-                    button_widget.show()
-                else:
-                    button_widget.hide()
+            self.ui.updateLayoutGrid(self.padLayout, self.layouts[Mode.FULL])
             self.currentIndex = 0
             self.currentButton = self.padLayout[0]
             if self.joystick_id in self.padValues.keys():
                 self.padValues[self.joystick_id]["layout"] = {}
-            if self.joystick_id in self.addedEvents.keys():
-                self.addedEvents[self.joystick_id] = {}
 
         self.changeLayoutRequested = None
+        self.layoutLoaded = False
 
     def toggleInspectMode(self, checked=False):
 
@@ -497,50 +219,87 @@ class JoystickMapper(QMainWindow):
             if self.headlessMode:
                 self.joystick_widget.hide()
             else:
-                self.joyNameCombo.setDisabled(True)
-                self.layoutCombo.setDisabled(True)
-                self.saveConfig_btn.setDisabled(True)
-            if not self.inspectWidget.text():
+                self.ui.joyNameCombo.setDisabled(True)
+                self.ui.layoutCombo.setDisabled(True)
+                self.ui.saveConfig_btn.setDisabled(True)
+            if not self.ui.inspectWidget.text():
                 if os.path.exists("joystickmapper_inspect.txt"):
                     os.remove("joystickmapper_inspect.txt")
                 self.getJoysticks(self.joysticksInfo)
-            oldWidget = self.scroll
-            newWidget = self.inspectWidget
+            oldWidget = self.ui.scroll
+            newWidget = self.ui.inspectWidget
 
         else:
             if self.headlessMode:
                 self.joystick_widget.show()
             else:
-                self.joyNameCombo.setDisabled(False)
-                self.layoutCombo.setDisabled(False)
-                self.saveConfig_btn.setDisabled(False)
-            oldWidget = self.inspectWidget
-            newWidget = self.scroll
+                self.ui.joyNameCombo.setDisabled(False)
+                self.ui.layoutCombo.setDisabled(False)
+                self.ui.saveConfig_btn.setDisabled(False)
+            oldWidget = self.ui.inspectWidget
+            newWidget = self.ui.scroll
 
         if not self.headlessMode:
-            self.toggleInspect.setText(getHeaderText("norm") if self.inspectMode else getHeaderText("deb"))
+            self.ui.toggleInspect.setText(getHeaderText("norm") if self.inspectMode else getHeaderText("deb"))
 
         oldWidget.hide()
-        self.mainLayout.replaceWidget(oldWidget, newWidget)
+        self.ui.mainLayout.replaceWidget(oldWidget, newWidget)
         newWidget.show()
         self._toggleInspectModeSig.emit(self.inspectMode)
 
+    def loadConfig(self, checked=False):
+
+        filename, _ = QFileDialog.getOpenFileName(self, "Select file to load", ".", "*.json")
+        if filename:
+            filename = os.path.normpath(filename)
+            with open(filename, "r", encoding="utf8") as f:
+                layout = json.loads(f.read())
+
+            # try:
+            self.selectedPadLayout = layout["layout"]
+            if self.selectedPadLayout not in list(self.layouts.keys()):
+                raise "Wrong layout"
+            self.padLayout = list(layout[self.joystick_id].keys())
+            new_padLayout = {}
+            if self.joystick_id is not None:
+                self.padValues[self.joystick_id]["layout"] = {}
+            for button in self.padLayout:
+                value = str(layout[self.joystick_id][button]["value"])
+                if self.joystick_id is not None:
+                    self.padValues[self.joystick_id]["layout"][button] = value
+                new_padLayout[button] = value
+            self.ui.loadNewLayoutGrid(new_padLayout, self.layouts[self.selectedPadLayout])
+            self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
+            self.layoutLoaded = True
+
+            # except:
+            #     self.ui.wrongLayoutFileDialog.exec()
+
     def onSaveConfig(self):
-        self.saveDialog.exec()
+        self.ui.saveDialog.exec()
 
     def saveConfig(self, force=False):
 
         if self.forceCompleteLayout and self.joystick_id is not None and len(self.padLayout) != len(list(self.padValues[self.joystick_id]["layout"].keys())):
-            if not self.headlessMode:
-                self.completeLayoutDialog.exec()
+            # warn user in case configuration is not complete, but it should
+            if self.headlessMode:
+                # in headless mode, the tool will exit since there is no other way (user can repeat process)
+                QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.ui.completeLayoutHeadlessDialog))
+                self.ui.completeLayoutHeadlessDialog.exec()
+            else:
+                # in non-headless mode, no configuration is saved. User can work it out within the tool.
+                self.ui.completeLayoutDialog.exec()
 
         else:
 
             if force or (self.headlessMode and not self.inspectMode):
+                # force means that user has pressed the 'Save' button. Headless mode needs to automatically save.
 
+                # joystick_id should not be None, but just in case...
                 saveConfig = self.joystick_id is not None
-                if not self.outputFile:
-                    if self.joystick_id is not None:
+
+                if saveConfig:
+                    if not self.outputFile:
                         joyName = self.joysticksInfo[self.joystick_id]["name"]
                         padLayout = "FULL" if self.selectedPadLayout == "Completo" else self.selectedPadLayout.upper()
                         fileBaseName = get_valid_filename(padLayout + "_" + joyName)
@@ -550,87 +309,95 @@ class JoystickMapper(QMainWindow):
                             i += 1
                             fileName = f"{fileBaseName}_{i}.json"
                     else:
-                        saveConfig = False
-                        fileName = ""
-                else:
-                    fileName = self.outputFile
-                if saveConfig:
+                        fileName = self.outputFile
+
                     output = {
                         "joysticks_info": self.joysticksInfo,
+                        "layout": self.selectedPadLayout,
                         "joystick_configured": self.joystick_id,
                         self.joystick_id: self.padValues[self.joystick_id]["layout"]
                     }
                     with open(fileName, "w", encoding="utf8") as f:
                         json.dump(output, f, ensure_ascii=False, sort_keys=False, indent=4)
 
-                    if not self.headlessMode:
-                        self.savedDialog.exec()
+                    if self.headlessMode:
+                        # warn the user the configuration was successful and exit tool
+                        QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.ui.controllerConfiguredHeadlessDialog))
+                        self.ui.controllerConfiguredHeadlessDialog.exec()
+                    else:
+                        # warn the user the configuration was saved
+                        self.ui.savedDialog.exec()
 
     @pyqtSlot(dict)
     def getJoysticks(self, joysticksInfo):
 
         if not self.headlessMode and not self.inspectMode:
-            self.joyNameCombo.clear()
+            self.ui.joyNameCombo.clear()
+
+        self.joysticksInfo = self.checkJoysticksInfo(joysticksInfo)
+
+        if self.joysticksInfo:
+
+            if self.inspectMode and not self.ui.inspectWidget.text():
+                msg1, msg2 = getJoysticksMessages()
+                self.drawButtonValue(msg1)
+                for joystick in self.joysticksInfo.keys():
+                    self.drawButtonValue(msg2 % (self.joysticksInfo[joystick]["name"],
+                                                 joystick,
+                                                 self.joysticksInfo[joystick]["guid"],
+                                                 self.joysticksInfo[joystick]["id"]))
+
+            else:
+
+                if self.headlessMode:
+                    joysticks = [self.joystick_id] if self.joystick_id is not None else []
+                    self.changeLayout(0, force=True)
+
+                else:
+                    joysticks = list(joysticksInfo.keys())
+                    comboItems = [f"{str(joystick)}: {joysticksInfo[joystick]["name"]}" for joystick in joysticks]
+                    self.ui.joyNameCombo.addItems(comboItems)
+                    self.ui.joyNameCombo.setCurrentIndex(0)
+                    self.joystick_id = joysticks[0]
+                    self.changeLayout(self.ui.layoutCombo.currentIndex(), force=True)
+
+                for joystick in joysticks:
+                    joystickInfo = joysticksInfo[joystick]
+                    self.padValues[joystick] = {
+                        "name": joystickInfo["name"],
+                        "guid": joystickInfo["guid"],
+                        "id": joystickInfo["id"],
+                        "layout": {}
+                    }
+
+                    if self.headlessMode and self.joystick_id is not None and joystick == self.joystick_id:
+                        self.idLabel.setText(joystick + ":")
+                        self.nameLabel.setText(joystickInfo["name"])
+
+    def checkJoysticksInfo(self, joysticksInfo):
 
         if not joysticksInfo:
-            self.joysticksInfo = joysticksInfo
             if self.headlessMode:
                 QTimer.singleShot(3000, self.forceClose)
-                self.controllersDisconnectedHeadlessDialog.exec()
+                self.ui.controllersDisconnectedHeadlessDialog.exec()
             else:
                 if self.joysticksInfo:
-                    self.controllersDisconnectedDialog.exec()
+                    self.ui.controllersDisconnectedDialog.exec()
                 else:
-                    self.noControllersDialog.exec()
-            return
+                    self.ui.noControllersDialog.exec()
         else:
             if self.headlessMode:
                 if (self.joystick_id is not None and self.joystick_id not in joysticksInfo.keys() or
                         (self.joystick_id in self.joysticksInfo.keys() and self.joystick_id in joysticksInfo.keys() and
                          self.joysticksInfo[self.joystick_id]["name"] != joysticksInfo[self.joystick_id]["name"])):
-                    QTimer.singleShot(3000, lambda: self.forceClose(
-                        dialog_to_close=self.controllersDisconnectedHeadlessDialog))
-                    self.controllersDisconnectedHeadlessDialog.exec()
+                    QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.ui.controllersDisconnectedHeadlessDialog))
+                    self.ui.controllersDisconnectedHeadlessDialog.exec()
             else:
                 if self.joystick_id is not None and self.joysticksInfo != joysticksInfo:
-                    self.controllersChangedDialog.exec()
-            self.joysticksInfo = joysticksInfo
+                    self.ui.controllersChangedDialog.exec()
 
-        if self.inspectMode and not self.inspectWidget.text():
-            msg1, msg2 = getJoysticksMessages()
-            self.drawButtonValue(msg1)
-            for joystick in self.joysticksInfo.keys():
-                self.drawButtonValue(msg2 % (self.joysticksInfo[joystick]["name"],
-                                             joystick,
-                                             self.joysticksInfo[joystick]["guid"],
-                                             self.joysticksInfo[joystick]["id"]))
+        return joysticksInfo
 
-        else:
-            if not self.headlessMode:
-                joysticks = list(joysticksInfo.keys())
-                comboItems = [f"{str(joystick)}: {joysticksInfo[joystick]["name"]}" for joystick in joysticks]
-                self.joyNameCombo.addItems(comboItems)
-                self.joyNameCombo.setCurrentIndex(0)
-                self.joystick_id = joysticks[0]
-                self.changeLayout(self.layoutCombo.currentIndex(), force=True)
-
-            else:
-                joysticks = [self.joystick_id] if self.joystick_id is not None else []
-                self.changeLayout(0, force=True)
-
-            for joystick in joysticks:
-                joystickInfo = joysticksInfo[joystick]
-                self.padValues[joystick] = {
-                    "name": joystickInfo["name"],
-                    "guid": joystickInfo["guid"],
-                    "id": joystickInfo["id"],
-                    "layout": {}
-                }
-                self.addedEvents[joystick] = {}
-
-                if self.headlessMode and self.joystick_id is not None and joystick == self.joystick_id:
-                    self.idLabel.setText(joystick + ":")
-                    self.nameLabel.setText(joystickInfo["name"])
 
     @pyqtSlot(pygame.event.Event)
     def getButtonValue(self, event):
@@ -642,7 +409,7 @@ class JoystickMapper(QMainWindow):
             self.configButtonValue(event)
 
     def drawButtonValue(self, event):
-        self.inspectWidget.appendText(str(event))
+        self.ui.inspectWidget.appendText(str(event))
         with open("joystickmapper_inspect.txt", "a", encoding="utf8") as f:
             f.write(str(event) + "\n")
 
@@ -654,10 +421,6 @@ class JoystickMapper(QMainWindow):
             valueDesc = self.omittedText
             if self.currentButton in self.padValues[self.joystick_id]["layout"].keys():
                 del self.padValues[self.joystick_id]["layout"][self.currentButton]
-            addedEventsKeys = list(self.addedEvents[self.joystick_id].keys())
-            if ((self.currentButton != homeButton and self.currentButton in addedEventsKeys) or
-                    (self.currentButton == homeButton and addedEventsKeys.count(self.currentButton) > 1)):
-                del self.addedEvents[self.joystick_id][self.currentButton]
             goToNext = True
 
         else:
@@ -690,7 +453,7 @@ class JoystickMapper(QMainWindow):
                         "type": event.type,
                         "description": "D-PAD",
                         "hat": event.hat,
-                        "value": event.value
+                        "value": [int(value) for value in event.value]
                     }
                     valueDesc = f"HAT {str(event.value[0])}, {str(event.value[1])}"
 
@@ -698,55 +461,56 @@ class JoystickMapper(QMainWindow):
                     self.padValues[joystick_id]["layout"][currentButton] = {
                         "type": event.type,
                         "description": "ANALOG JOYSTICK / TRIGGER",
-                        "axe": event.axis,
-                        "value": event.value
+                        "axis": event.axis,
+                        "value": int(event.value)
                     }
                     valueDesc = f"AXIS {str(event.axis)}, {str(int(event.value))}"
 
-                currText = self.content_layout.itemAt(self.currentIndex).widget().layout().itemAt(1).widget().text()
-                eventAdded = event in self.addedEvents[self.joystick_id].values()
+                currText = self.ui.content_layout.itemAt(self.currentIndex).widget().layout().itemAt(1).widget().text()
+                eventAdded = event in self.padValues[self.joystick_id]["layout"].values()
                 if not eventAdded or currText == valueDesc:
                     goToNext = True
-                    if not eventAdded:
-                        self.addedEvents[self.joystick_id][self.currentButton] = event
 
                 else:
-                    self.content_layout.itemAt(self.currentIndex).widget().layout().itemAt(1).widget().setText(self.alreadyAssignedText)
-                    self.statusLabel.setText(self.repeatedText)
+                    self.ui.content_layout.itemAt(self.currentIndex).widget().layout().itemAt(1).widget().setText(self.alreadyAssignedText)
+                    self.ui.statusLabel.setText(self.repeatedText)
 
         if goToNext:
-            prevIndex = self.currentIndex
-            self.currentIndex += 1
-            if self.currentIndex <= len(self.padLayout):
-                if self.currentIndex == len(self.padLayout):
-                    if self.headlessMode:
-                        self.endConfig(prevIndex, valueDesc)
-                    else:
-                        self.currentIndex = prevIndex
-                if not self.configEnded:
-                    self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
+            self.checkNextButton(valueDesc)
 
-    def checkNextButton(self, index, prevIndex, valueDesc=""):
+    def checkNextButton(self, valueDesc):
+        prevIndex = self.currentIndex
+        self.currentIndex += 1
+        if self.currentIndex <= len(self.padLayout):
+            if self.currentIndex == len(self.padLayout):
+                if self.headlessMode:
+                    self.endHeadlessConfig(prevIndex, valueDesc)
+                else:
+                    self.currentIndex = prevIndex
+            if not self.configEnded:
+                self.updateNextButton(self.currentIndex, prevIndex, valueDesc)
+
+    def updateNextButton(self, index, prevIndex, valueDesc=""):
         if 0 <= prevIndex <= len(self.padLayout):
-            prevWidget = self.content_layout.itemAt(prevIndex).widget()
-            prevWidget.setObjectName(self.idle_style_tag)
+            prevWidget = self.ui.content_layout.itemAt(prevIndex).widget()
+            prevWidget.setObjectName(self.ui.idle_style_tag)
             for i in range(prevWidget.layout().count()):
                 w = prevWidget.layout().itemAt(i).widget()
-                w.setObjectName(self.idle_style_tag)
-            prevWidget.setStyleSheet(self.main_style)
+                w.setObjectName(self.ui.idle_style_tag)
+            prevWidget.setStyleSheet(self.ui.main_style)
             prevWidget.layout().itemAt(1).widget().setText(valueDesc)
-        currWidget = self.content_layout.itemAt(index).widget()
-        currWidget.setObjectName(self.selected_style_tag)
+        currWidget = self.ui.content_layout.itemAt(index).widget()
+        currWidget.setObjectName(self.ui.selected_style_tag)
         for i in range(currWidget.layout().count()):
             w = currWidget.layout().itemAt(i).widget()
-            w.setObjectName(self.selected_style_tag)
-        currWidget.setStyleSheet(self.main_style)
-        self.scroll.ensureWidgetVisible(currWidget)
+            w.setObjectName(self.ui.selected_style_tag)
+        currWidget.setStyleSheet(self.ui.main_style)
+        self.ui.scroll.ensureWidgetVisible(currWidget)
         self.currentButton = self.padLayout[index]
         if self.currentButton == homeButton:
-            self.statusLabel.setText(self.homeText)
+            self.ui.statusLabel.setText(self.ui.homeText)
         else:
-            self.statusLabel.setText(self.defaultText)
+            self.ui.statusLabel.setText(self.ui.defaultText)
 
     def eventFilter(self, source=None, event=None):
         # This is needed when widget is rotated (installed in graphicsview)
@@ -773,7 +537,7 @@ class JoystickMapper(QMainWindow):
         if not self.inspectMode and 0 <= self.currentIndex <= len(self.padLayout):
 
             prevIndex = self.currentIndex
-            prevText = self.content_layout.itemAt(self.currentIndex).widget().layout().itemAt(1).widget().text()
+            prevText = self.ui.content_layout.itemAt(self.currentIndex).widget().layout().itemAt(1).widget().text()
 
             if a0.key() == Qt.Key.Key_Up:
                 if self.currentIndex > 0:
@@ -784,44 +548,31 @@ class JoystickMapper(QMainWindow):
                     self.currentIndex += 1
 
             elif a0.key() == Qt.Key.Key_Delete:
-                w = self.content_layout.itemAt(prevIndex).widget()
-                w.layout().itemAt(1).widget().setText(self.notAssignedText)
+                w = self.ui.content_layout.itemAt(prevIndex).widget()
+                w.layout().itemAt(1).widget().setText(self.ui.notAssignedText)
 
             if prevIndex != self.currentIndex:
-                if prevText in (self.notAssignedText, self.alreadyAssignedText):
+                if prevText in (self.ui.notAssignedText, self.ui.alreadyAssignedText):
                     valueDesc = self.omittedText
-                    if self.joystick_id is not None and self.joystick_id in self.addedEvents.keys() and self.currentButton in self.addedEvents[self.joystick_id].keys():
-                        try:
-                            del self.addedEvents[self.joystick_id][self.currentButton]
-                        except:
-                            pass
                 else:
                     valueDesc = prevText
-                if self.headlessMode and prevIndex == len(self.padLayout) - 1 and valueDesc == self.omittedText:
-                    self.endConfig(prevIndex, valueDesc)
+                if self.headlessMode and prevIndex == len(self.padLayout) - 1 and valueDesc == self.ui.omittedText:
+                    self.endHeadlessConfig(prevIndex, valueDesc)
                 else:
-                    self.checkNextButton(self.currentIndex, prevIndex, valueDesc)
+                    self.updateNextButton(self.currentIndex, prevIndex, valueDesc)
 
-        if self.content_widget.isVisible():
-            self.content_widget.setFocus(Qt.FocusReason.NoFocusReason)
+        if self.ui.content_widget.isVisible():
+            self.ui.content_widget.setFocus(Qt.FocusReason.NoFocusReason)
 
-    def endConfig(self, index, text):
-        w = self.content_layout.itemAt(index).widget()
+    def endHeadlessConfig(self, index, text):
+        w = self.ui.content_layout.itemAt(index).widget()
         w.layout().itemAt(1).widget().setText(text)
-        # force updating label content (blocked by dialog otherwise)
+        # force updating label content (blocked by dialogs in saveConfig() otherwise)
         w.update()
         w.hide()
         w.show()
-        if self.forceCompleteLayout and self.joystick_id is not None and len(self.padLayout) != len(list(self.padValues[self.joystick_id]["layout"].keys())):
-            if self.headlessMode:
-                QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.completeLayoutHeadlessDialog))
-                self.completeLayoutHeadlessDialog.exec()
-            else:
-                self.completeLayoutDialog.exec()
-        else:
-            self.configEnded = True
-            QTimer.singleShot(3000, lambda: self.forceClose(dialog_to_close=self.controllerConfiguredHeadlessDialog))
-            self.controllerConfiguredHeadlessDialog.exec()
+        self.configEnded = True
+        self.saveConfig()
 
     def forceClose(self, checked=False, dialog_to_close=None):
         self.forceCloseRequested = True
@@ -833,8 +584,8 @@ class JoystickMapper(QMainWindow):
     def closeEvent(self, a0=None):
 
         if self.forceCloseRequested or self.headlessMode:
+            # quit listener, warn parent (if signal is not None) and close tool (if standalone)
             self.listener_thread.quit()
-            self.saveConfig()
             if self.mapperClosedSig is not None:
                 self.mapperClosedSig.emit(self.configEnded)
             if self.standalone:
@@ -842,5 +593,6 @@ class JoystickMapper(QMainWindow):
                 sys.exit()
 
         else:
+            # ask user. It user replies yes, closing will be forced using forceClose()
             a0.ignore()
-            self.cancelDialog.exec()
+            self.ui.cancelDialog.exec()

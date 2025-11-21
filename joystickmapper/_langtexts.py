@@ -83,6 +83,12 @@ def getHeaderText(text, lang="es"):
         else:
             return "Save"
 
+    elif text == "load":
+        if lang == "es":
+            return "Cargar"
+        else:
+            return "Load"
+
 
 def getButtonValueText(text, lang="es"):
     if text == "no":
