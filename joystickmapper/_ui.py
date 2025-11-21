@@ -115,19 +115,19 @@ class MainWindow_UI:
             dummylabel = QLabel()
             self.headerLayout.addWidget(dummylabel, 0, 5)
 
-            self.saveConfig_btn = QPushButton()
-            self.saveConfig_btn.setMinimumWidth(120)
-            self.saveConfig_btn.setMinimumHeight(30)
-            self.saveConfig_btn.setFont(font)
-            self.saveConfig_btn.setText(getHeaderText("save"))
-            self.headerLayout.addWidget(self.saveConfig_btn, 0, 6)
-
             self.loadConfig_btn = QPushButton()
             self.loadConfig_btn.setMinimumWidth(120)
             self.loadConfig_btn.setMinimumHeight(30)
             self.loadConfig_btn.setFont(font)
             self.loadConfig_btn.setText(getHeaderText("load"))
-            self.headerLayout.addWidget(self.loadConfig_btn, 0, 7)
+            self.headerLayout.addWidget(self.loadConfig_btn, 0, 6)
+
+            self.saveConfig_btn = QPushButton()
+            self.saveConfig_btn.setMinimumWidth(120)
+            self.saveConfig_btn.setMinimumHeight(30)
+            self.saveConfig_btn.setFont(font)
+            self.saveConfig_btn.setText(getHeaderText("save"))
+            self.headerLayout.addWidget(self.saveConfig_btn, 0, 7)
 
             self.headerLayout.setColumnStretch(0, 0)
             self.headerLayout.setColumnStretch(1, 0)
@@ -273,12 +273,16 @@ class MainWindow_UI:
                 button_widget.setObjectName(objectName)
                 button_widget.setStyleSheet(self.main_style)
                 button_label = button_widget.layout().itemAt(0).widget()
-                button_label.setText(button)
+                if "(" in button:
+                    currentButton = button.split("(", 1)[0].strip()
+                else:
+                    currentButton = button
+                button_label.setText(currentButton)
                 button_label.setObjectName(objectName)
                 button_label.setStyleSheet(self.main_style)
                 button_value = button_widget.layout().itemAt(1).widget()
-                if button in pad_keys:
-                    value = pad_layout[button]
+                if currentButton in pad_keys:
+                    value = pad_layout[currentButton]
                 else:
                     value = self.notAssignedText
                 button_value.setText(value)
