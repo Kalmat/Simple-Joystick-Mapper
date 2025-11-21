@@ -273,14 +273,14 @@ class MainWindow_UI:
                 button_widget.setObjectName(objectName)
                 button_widget.setStyleSheet(self.main_style)
                 button_label = button_widget.layout().itemAt(0).widget()
+                button_label.setText(button)
+                button_label.setObjectName(objectName)
+                button_label.setStyleSheet(self.main_style)
+                button_value = button_widget.layout().itemAt(1).widget()
                 if "(" in button:
                     currentButton = button.split("(", 1)[0].strip()
                 else:
                     currentButton = button
-                button_label.setText(currentButton)
-                button_label.setObjectName(objectName)
-                button_label.setStyleSheet(self.main_style)
-                button_value = button_widget.layout().itemAt(1).widget()
                 if currentButton in pad_keys:
                     value = pad_layout[currentButton]
                 else:
