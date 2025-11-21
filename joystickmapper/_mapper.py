@@ -275,7 +275,7 @@ class JoystickMapper(QMainWindow):
                     if self.joystick_id is not None:
                         self.padValues[self.joystick_id]["layout"][button] = layout[joystick_id][button]
                     new_padLayout[button] = valueDesc
-                self.ui.loadNewLayoutGrid(new_padLayout, self.layouts[self.selectedPadLayout])
+                self.ui.loadNewLayoutGrid(new_padLayout, self.padLayout)
                 self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
                 self.layoutLoaded = True
 

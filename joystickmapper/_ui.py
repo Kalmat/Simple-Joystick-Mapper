@@ -261,9 +261,6 @@ class MainWindow_UI:
 
     def loadNewLayoutGrid(self, pad_layout, ref_pad_layout):
 
-        if len(pad_layout) > len(ref_pad_layout):
-            ref_pad_layout = pad_layout
-
         pad_keys = list(pad_layout.keys())
 
         for i, button in enumerate(ref_pad_layout):
