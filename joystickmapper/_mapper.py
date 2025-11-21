@@ -255,32 +255,32 @@ class JoystickMapper(QMainWindow):
             with open(filename, "r", encoding="utf8") as f:
                 layout = json.loads(f.read())
 
-            # try:
-            self.selectedPadLayout = layout["layout"]
-            if self.selectedPadLayout not in list(self.layouts.keys()):
-                raise "Wrong layout"
-            joystick_id = layout["joystick_configured"]
-            self.padLayout = list(layout[joystick_id].keys())
-            if self.joystick_id is not None:
-                self.padValues[self.joystick_id]["layout"] = {}
-            new_padLayout = {}
-            for button in self.padLayout:
-                value = layout[joystick_id][button]["value"]
-                if "hat" in layout[joystick_id][button].keys():
-                    valueDesc = f"HAT {str(value[0])}, {str(value[1])}"
-                elif "axis" in layout[joystick_id][button].keys():
-                    valueDesc = f"AXIS {str(layout[joystick_id][button]["axis"])}, {str(value)}"
-                else:
-                    valueDesc = str(value)
+            try:
+                self.selectedPadLayout = layout["layout"]
+                if self.selectedPadLayout not in list(self.layouts.keys()):
+                    raise "Wrong layout"
+                joystick_id = layout["joystick_configured"]
+                self.padLayout = self.layouts[self.selectedPadLayout]
                 if self.joystick_id is not None:
-                    self.padValues[self.joystick_id]["layout"][button] = valueDesc
-                new_padLayout[button] = valueDesc
-            self.ui.loadNewLayoutGrid(new_padLayout, self.layouts[self.selectedPadLayout])
-            self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
-            self.layoutLoaded = True
+                    self.padValues[self.joystick_id]["layout"] = {}
+                new_padLayout = {}
+                for button in layout[joystick_id].keys():
+                    value = layout[joystick_id][button]["value"]
+                    if "hat" in layout[joystick_id][button].keys():
+                        valueDesc = f"HAT {str(value[0])}, {str(value[1])}"
+                    elif "axis" in layout[joystick_id][button].keys():
+                        valueDesc = f"AXIS {str(layout[joystick_id][button]["axis"])}, {str(value)}"
+                    else:
+                        valueDesc = str(value)
+                    if self.joystick_id is not None:
+                        self.padValues[self.joystick_id]["layout"][button] = layout[joystick_id][button]
+                    new_padLayout[button] = valueDesc
+                self.ui.loadNewLayoutGrid(new_padLayout, self.layouts[self.selectedPadLayout])
+                self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
+                self.layoutLoaded = True
 
-            # except:
-            #     self.ui.wrongLayoutFileDialog.exec()
+            except:
+                self.ui.loadLayoutErrorDialog.exec()
 
     def onSaveConfig(self):
         self.ui.saveDialog.exec()
@@ -443,6 +443,8 @@ class JoystickMapper(QMainWindow):
             joystick_id = str(event.instance_id)
             if self.joystick_id == joystick_id:
 
+                print(self.currentIndex, self.currentButton)
+
                 currentButton = self.currentButton
                 if "(" in currentButton:
                     currentButton = currentButton.split("(", 1)[0].strip()
@@ -560,7 +562,7 @@ class JoystickMapper(QMainWindow):
 
             if prevIndex != self.currentIndex:
                 if prevText in (self.ui.notAssignedText, self.ui.alreadyAssignedText):
-                    valueDesc = self.omittedText
+                    valueDesc = self.ui.omittedText
                 else:
                     valueDesc = prevText
                 if self.headlessMode and prevIndex == len(self.padLayout) - 1 and valueDesc == self.ui.omittedText:

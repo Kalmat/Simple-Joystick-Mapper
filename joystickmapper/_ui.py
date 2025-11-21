@@ -357,6 +357,10 @@ class MainWindow_UI:
         accept = self.completeLayoutHeadlessDialog.addButton(getButtonsText("accept"), QMessageBox.ButtonRole.AcceptRole)
         self.completeLayoutHeadlessDialog.removeButton(accept)
 
+        self.loadLayoutErrorDialog = QMessageBox(self.parent)
+        self.loadLayoutErrorDialog.setText(getDialogsText("load"))
+        accept = self.loadLayoutErrorDialog.addButton(getButtonsText("load"), QMessageBox.ButtonRole.AcceptRole)
+
         self.saveDialog = QMessageBox(self.parent)
         self.saveDialog.setText(getDialogsText("save"))
         reject = self.saveDialog.addButton(getButtonsText("cancel"), QMessageBox.ButtonRole.RejectRole)

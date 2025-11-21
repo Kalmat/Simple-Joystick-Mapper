@@ -229,6 +229,14 @@ def getDialogsText(text, lang="es"):
                    "No configuration will be saved.\n\n" \
                    "This dialog will automatically close in 3 seconds.\n\n"
 
+    elif text == "load":
+        if lang == "es":
+            return "La configuración es errónea.\n" \
+                   "Por favor, verifica el contenido o elige otra.\n\n"
+        else:
+            return "Wrong configuration file.\n" \
+                   "Please, check content or select another one.\n\n"
+
     elif text == "save":
         if lang == "es":
             return "Estás a punto de guardar esta configuración.\n\n" \
