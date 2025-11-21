@@ -7,6 +7,7 @@ Some useful features included in this tool:
 - Choose controller (if several connected)
 - Choose controller layout (Most typical layouts are already included: Menu, Retro, Arcade, Modern gamepad, etc.)
 - Add custom layouts of your choice (check the example included in 'custom_layouts.json')
+- Load existing configurations
 - Open "inspect" console which will show and save all events from all connected controllers. Very useful to debug.
 - Show window rotated
 - Show window in headless, non-interactive mode (suitable for non-mouse environments like an arcade system or menu)
@@ -30,15 +31,15 @@ After a successful configuration, find the output in '[LAYOUT]_[JOYSTICK NAME].j
 
 | Section               | Key             | Values                                        | Description                                                                    |
 |-----------------------|-----------------|-----------------------------------------------|--------------------------------------------------------------------------------|
-| "joysticks_info"      |                 |                                               |                                                                                |
+| "joysticks_info"      |                 |                                               | List and info of all connected controllers:                                    |
 |                       | "instance_id"   |                                               | Instance id of the controller (may change when re-connected, etc.)             |
 |                       |                 | "name"                                        | Human-readable name of the controller                                          |
 |                       |                 | "guid"                                        | Internal id of the controller. Should be unique for brand / model              |
 |                       |                 | "id"                                          | Id of the controller in the system (does not change within session)            |
-| "layout"              |                 |                                               | Controller layout used in configuration                                        |
+| "layout"              |                 |                                               | Controller layout used in configuration as per joystickMapper.Mode.*           |
 | "joystick_configured" |                 |                                               | Instance id of the configured controller (use it as key to get config info)    |
-| "instance_id"         |                 |                                               |                                                                                |
-|                       | "type"          |                                               | event type as per pygame values:                                               |
+| "instance_id"         |                 |                                               | Configuration info for joystick assigned to instance id value                  |
+|                       | "type"          |                                               | Event type as per pygame values:                                               |
 |                       |                 | "1539"                                        | Button (down)                                                                  | 
 |                       |                 | "1538"                                        | Hat (aka D-Pad or Directional Pad)                                             | 
 |                       |                 | "1536"                                        | Axis (aka Analog Joysticks and Triggers)                                       | 

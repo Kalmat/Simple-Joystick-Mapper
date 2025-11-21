@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QStyle, QFileDialog
 
 from ._listener import JoystickListener
 from ._ui import MainWindow_UI
-from ._layouts import homeButton
+from ._layouts import homeButton, layouts
+from ._angles import angles
 from ._modes import Mode
 from ._langtexts import *
 from ._utils import *
