@@ -224,6 +224,7 @@ class JoystickMapper(QMainWindow):
                 self.ui.joyNameCombo.setDisabled(True)
                 self.ui.layoutCombo.setDisabled(True)
                 self.ui.saveConfig_btn.setDisabled(True)
+                self.ui.loadConfig_btn.setDisabled(True)
             if not self.ui.inspectWidget.text():
                 if os.path.exists("joystickmapper_inspect.txt"):
                     os.remove("joystickmapper_inspect.txt")
@@ -238,6 +239,7 @@ class JoystickMapper(QMainWindow):
                 self.ui.joyNameCombo.setDisabled(False)
                 self.ui.layoutCombo.setDisabled(False)
                 self.ui.saveConfig_btn.setDisabled(False)
+                self.ui.loadConfig_btn.setDisabled(False)
             oldWidget = self.ui.inspectWidget
             newWidget = self.ui.scroll
 

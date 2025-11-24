@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtWidgets import QScrollArea, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QScrollArea, QWidget, QVBoxLayout, QLabel, QApplication
 
 
 class ScrollLabel(QScrollArea):
@@ -22,12 +22,13 @@ class ScrollLabel(QScrollArea):
         lay.addWidget(self.label)
 
         self.verticalScrollBar().rangeChanged.connect(self.scroll_to_bottom)
+        self.cursor = None
 
     def enterEvent(self, a0):
-        self.setCursor(Qt.CursorShape.IBeamCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.IBeamCursor)
 
     def leaveEvent(self, a0):
-        self.setCursor(Qt.CursorShape.ArrowCursor)
+        QApplication.restoreOverrideCursor()
 
     @pyqtSlot(int, int)
     def scroll_to_bottom(self, min_val, max_val):
