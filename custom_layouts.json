@@ -1,5 +1,6 @@
 {
-  "Custom Example": ["UP", "DOWN", "LEFT", "RIGHT",
-                     "⛌", " ⃝   ","  ⃞  ", "  ⃤  ", "L1", "R1",
-                     "SELECT", "START"]
+  "PSX": ["UP", "DOWN", "LEFT", "RIGHT",
+          "⛌", " ⃝   ","  ⃞  ", "  ⃤  ",
+          "L1", "L2", "R1", "R2",
+          "SELECT", "START"]
 }

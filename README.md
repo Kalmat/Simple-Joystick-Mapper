@@ -8,7 +8,7 @@ Some useful features included in this tool:
 - Choose controller layout (Most typical layouts are already included: Menu, Retro, Arcade, Modern gamepad, etc.)
 - Add custom layouts of your choice (check the example included in 'custom_layouts.json')
 - Load existing configurations
-- Open "inspect" console which will show and save all events from all connected controllers. Very useful to debug.
+- Open "inspect" console which will show and save all events from all connected controllers. Very useful to understand how your controller behave.
 - Show window rotated
 - Show window in headless, non-interactive mode (suitable for non-mouse environments like an arcade system or menu)
 - Show window in fullscreen or windowed modes

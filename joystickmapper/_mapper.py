@@ -108,14 +108,15 @@ class JoystickMapper(QMainWindow):
 
     def connectUISignals(self):
 
-        # connect UI signals
-        self.ui.joyNameCombo.currentIndexChanged.connect(self.onChangeJoystick)
-        self.ui.layoutCombo.addItems(list(self.layouts.keys()))
-        self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
-        self.ui.layoutCombo.currentIndexChanged.connect(self.onChangeLayout)
-        self.ui.toggleInspect.clicked.connect(self.toggleInspectMode)
-        self.ui.saveConfig_btn.clicked.connect(self.onSaveConfig)
-        self.ui.loadConfig_btn.clicked.connect(self.loadConfig)
+        if not self.headlessMode:
+            # connect UI signals
+            self.ui.joyNameCombo.currentIndexChanged.connect(self.onChangeJoystick)
+            self.ui.layoutCombo.addItems(list(self.layouts.keys()))
+            self.ui.layoutCombo.setCurrentText(self.selectedPadLayout)
+            self.ui.layoutCombo.currentIndexChanged.connect(self.onChangeLayout)
+            self.ui.toggleInspect.clicked.connect(self.toggleInspectMode)
+            self.ui.saveConfig_btn.clicked.connect(self.onSaveConfig)
+            self.ui.loadConfig_btn.clicked.connect(self.loadConfig)
 
         # connect dialogs buttons
         self.ui.cancelDialog_btn.clicked.connect(self.forceClose)
@@ -379,8 +380,8 @@ class JoystickMapper(QMainWindow):
                     }
 
                     if self.headlessMode and self.joystick_id is not None and joystick == self.joystick_id:
-                        self.idLabel.setText(joystick + ":")
-                        self.nameLabel.setText(joystickInfo["name"])
+                        self.ui.idLabel.setText(joystick + ":")
+                        self.ui.nameLabel.setText(joystickInfo["name"])
 
     def checkJoysticksInfo(self, joysticksInfo):
 

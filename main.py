@@ -56,8 +56,8 @@ if __name__ == "__main__":
         # This will allow to manage Ctl-C interruption (e.g. when running from IDE)
         signal.signal(signal.SIGINT, sigint_handler)
         timer = QTimer()
-        timer.start(500)
         timer.timeout.connect(lambda: None)
+        timer.start(500)
 
     # This will allow to catch and show some tracebacks (not all, anyway)
     sys._excepthook = sys.excepthook
