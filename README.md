@@ -50,7 +50,7 @@ After a successful configuration, find the output in '[LAYOUT]_[JOYSTICK NAME].j
 |                       | "hat" or "axis" | [#HAT]<br>[#AXIS]                             | value to identify which hat or axis has been pressed (not present for buttons) |
 |                       | "value"         | [#BUTTON]<br>[#VALUE]<br>([#AXIS], [#VALUE])  | value returned by button, hat or axis when pressed (hat will be a tuple)       |
 
-All values are integer or tuples of integers, representing:
+All values are integers or tuples of integers, representing:
 
 - #BUTTON value returned by the controller when a button is pressed. It depends on the controller model
 - #HAT value identifying the D-PAD pressed, typically numbered from 0 to N (in case the controller has more than one)
@@ -61,7 +61,7 @@ See example output at the end of this file.
 
 ### Usage
 
-    python joystickmapper.py [ARGS] [OPTIONS]
+    python main.py [ARGS] [OPTIONS]
 
 ARGS:
 
